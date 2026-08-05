@@ -95,6 +95,7 @@
     "templateZigzag": "Zigzag",
     "templateRibbon": "Ribbon",
     "templateMosaic": "Mosaic",
+    "templateMinimalBlue": "Minimal Blue",
     "upload": {
       "fromTemplate": "From Template",
       "fromFile": "Upload File",
@@ -359,6 +360,7 @@
     "deleteConfirm": "Delete this record?",
     "deleteConfirmDesc": "This action cannot be undone. The record will be permanently deleted.",
     "deleted": "Record deleted",
+    "jdBreakdown": "Job Breakdown",
     "jdPreview": "JD Preview",
     "viewDetail": "View Details",
     "loadingHistory": "Loading history...",

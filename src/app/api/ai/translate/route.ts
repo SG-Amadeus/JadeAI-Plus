@@ -5,6 +5,7 @@ import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { translateInputSchema } from '@/lib/ai/translate-schema';
 import { extractJson } from '@/lib/ai/extract-json';
+import { stripPersonalInfoForAI } from '@/lib/resume/sanitize';
 import { z } from 'zod/v4';
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -18,11 +19,6 @@ const LANGUAGE_NAMES: Record<string, string> = {
   pt: 'Portuguese',
   ru: 'Russian',
   ar: 'Arabic',
-};
-
-/** Fields to strip before sending to AI (e.g. base64 avatar), keyed by section type */
-const STRIP_FIELDS: Record<string, string[]> = {
-  personal_info: ['avatar'],
 };
 
 const MAX_CONCURRENCY = 4;
@@ -138,42 +134,26 @@ export async function POST(request: NextRequest) {
       newResumeId = duplicated.id;
     }
 
-    const allSections = sectionIds
+    const allSections = (sectionIds
       ? workingSections.filter((s: any) => sectionIds.includes(s.id))
-      : workingSections;
+      : workingSections).filter((s: any) => !s.inherited);
 
     if (allSections.length === 0) {
       return new Response(JSON.stringify({ error: 'No sections found to translate' }), { status: 400 });
     }
 
-    // Build section data for AI, stripping heavy non-translatable fields (e.g. base64 avatar)
-    // Save stripped fields so we can merge them back after translation
+    // Strip PII before sending to AI; save stripped fields to merge back after translation
     const strippedFields = new Map<string, Record<string, unknown>>();
 
     const sectionsData = allSections.map((s: any) => {
-      const fieldsToStrip = STRIP_FIELDS[s.type];
-      let content = s.content;
-
-      if (fieldsToStrip && content && typeof content === 'object') {
-        const saved: Record<string, unknown> = {};
-        content = { ...content };
-        for (const field of fieldsToStrip) {
-          if (field in content) {
-            saved[field] = content[field];
-            delete content[field];
-          }
+      if (s.type === 'personal_info') {
+        const { content, stripped } = stripPersonalInfoForAI(s.content);
+        if (Object.keys(stripped).length > 0) {
+          strippedFields.set(s.id, stripped);
         }
-        if (Object.keys(saved).length > 0) {
-          strippedFields.set(s.id, saved);
-        }
+        return { sectionId: s.id, type: s.type, title: s.title, content };
       }
-
-      return {
-        sectionId: s.id,
-        type: s.type,
-        title: s.title,
-        content,
-      };
+      return { sectionId: s.id, type: s.type, title: s.title, content: s.content };
     });
 
     const aiConfig = extractAIConfig(request);

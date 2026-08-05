@@ -163,6 +163,8 @@ export interface ResumeSection {
   content: SectionContent;
   createdAt: Date;
   updatedAt: Date;
+  inherited?: boolean;
+  inheritedFrom?: string;
 }
 
 export interface ThemeConfig {
@@ -184,6 +186,8 @@ export interface Resume {
   themeConfig: ThemeConfig;
   isDefault: boolean;
   language: string;
+  parentId?: string | null;
+  derivedAt?: Date | null;
   sections: ResumeSection[];
   createdAt: Date;
   updatedAt: Date;

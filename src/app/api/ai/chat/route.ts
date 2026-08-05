@@ -6,6 +6,7 @@ import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { chatRepository } from '@/lib/db/repositories/chat.repository';
 import { getSystemPrompt } from '@/lib/ai/prompts';
 import { createExecutableTools } from '@/lib/ai/tools';
+import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 
 const MAX_ROUNDS = 10;
 const MAX_MESSAGES = MAX_ROUNDS * 2; // 10 rounds = 20 messages (user + assistant)
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (resumeId) {
       const resume = await resumeRepository.findById(resumeId);
       if (resume) {
-        resumeContext = JSON.stringify(resume.sections);
+        resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
       }
     }
 

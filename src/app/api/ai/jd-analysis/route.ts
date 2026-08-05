@@ -6,6 +6,7 @@ import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { analysisRepository } from '@/lib/db/repositories/analysis.repository';
 import { jdAnalysisInputSchema, jdAnalysisOutputSchema } from '@/lib/ai/jd-analysis-schema';
 import { extractJson } from '@/lib/ai/extract-json';
+import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 
 const JD_ANALYSIS_PROMPT = `You are an expert resume analyst and career coach. Analyze the match between the provided resume and job description.
 
@@ -18,6 +19,7 @@ Your analysis should be thorough and actionable. You MUST return a JSON object w
 - suggestions (array of {section, current, suggested}): Actionable improvement suggestions
 - atsScore (number 0-100): ATS compatibility rating
 - summary (string): Concise overall assessment
+- jdBreakdown (string): A markdown-formatted structured breakdown of the JD itself. Use ## headings and bullet lists (- ). Include these sections: ## 岗位概述 (role overview), ## 核心职责 (key responsibilities), ## 技术要求 (tech requirements), ## 加分项 (preferred qualifications). Keep it concise so the user can understand the job at a glance.
 
 CRITICAL: You are a JSON API. Your entire response must be a single valid JSON object starting with { and ending with }. Do NOT use markdown syntax. Do NOT wrap in code fences. Do NOT add any text before or after the JSON.`;
 
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const resumeContext = JSON.stringify(resume.sections);
+    const resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
     const aiConfig = extractAIConfig(request);
     const model = getModel(aiConfig);
 

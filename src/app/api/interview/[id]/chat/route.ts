@@ -5,6 +5,7 @@ import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { interviewRepository } from '@/lib/db/repositories/interview.repository';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { buildInterviewSystemPrompt } from '@/lib/ai/interview-prompts';
+import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 import { dbReady } from '@/lib/db';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (session.resumeId) {
       const resume = await resumeRepository.findById(session.resumeId as string);
       if (resume) {
-        resumeContent = JSON.stringify(resume.sections);
+        resumeContent = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
       }
     }
 

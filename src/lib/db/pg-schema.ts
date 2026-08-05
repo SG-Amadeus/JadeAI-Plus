@@ -45,6 +45,8 @@ export const resumes = pgTable('resumes', {
   isPublic: integer('is_public').notNull().default(0),
   sharePassword: text('share_password'),
   viewCount: integer('view_count').notNull().default(0),
+  parentId: text('parent_id'),
+  derivedAt: integer('derived_at'),
   createdAt: integer('created_at').notNull().default(epochNow),
   updatedAt: integer('updated_at').notNull().default(epochNow),
 });

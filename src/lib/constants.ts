@@ -40,6 +40,7 @@ export const TEMPLATES = [
   'architect', 'legal', 'teacher', 'scientist', 'engineer',
   // Batch 6: Layout Variants
   'sidebar', 'card', 'zigzag', 'ribbon', 'mosaic',
+  'minimal-blue',
 ] as const;
 export type Template = (typeof TEMPLATES)[number];
 

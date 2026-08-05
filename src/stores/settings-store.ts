@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { type AIProvider, PROVIDERS } from '@/lib/ai/provider';
 
-export type AIProvider = 'openai' | 'anthropic' | 'gemini';
+export type { AIProvider } from '@/lib/ai/provider';
 
 interface SettingsStore {
   // AI settings
@@ -35,11 +36,9 @@ interface ProviderConfig {
   apiKey: string;
 }
 
-const PROVIDER_DEFAULTS: Record<AIProvider, ProviderConfig> = {
-  openai: { baseURL: 'https://api.openai.com/v1', model: 'gpt-4o', apiKey: '' },
-  anthropic: { baseURL: 'https://api.anthropic.com', model: 'claude-sonnet-4-20250514', apiKey: '' },
-  gemini: { baseURL: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-2.0-flash', apiKey: '' },
-};
+const PROVIDER_DEFAULTS: Record<string, ProviderConfig> = Object.fromEntries(
+  PROVIDERS.map((p) => [p.id, { baseURL: p.defaultBaseURL, model: p.defaultModel, apiKey: '' }])
+);
 
 function loadProviderConfigs(): Partial<Record<AIProvider, ProviderConfig>> {
   if (typeof window === 'undefined') return {};
@@ -204,8 +203,9 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const res = await fetch('/api/user/settings', { headers: getHeaders() });
       if (res.ok) {
         const data = await res.json();
-        // Backward compat: map legacy 'custom' provider to 'openai'
-        const provider = (data.aiProvider === 'custom' || data.aiProvider === 'azure') ? 'openai' : data.aiProvider;
+        // Backward compat: map legacy providers, validate against known list
+        const raw = (data.aiProvider === 'custom' || data.aiProvider === 'azure') ? 'openai' : data.aiProvider;
+        const provider = (raw && raw in PROVIDER_DEFAULTS ? raw : 'openai') as AIProvider;
         set({
           ...(provider && { aiProvider: provider }),
           ...(data.aiBaseURL && { aiBaseURL: data.aiBaseURL }),

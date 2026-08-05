@@ -23,6 +23,9 @@ export const jdAnalysisOutputSchema = z.object({
   suggestions: z.array(suggestionSchema).describe('Specific optimization suggestions for each section'),
   atsScore: z.number().min(0).max(100).describe('ATS (Applicant Tracking System) compatibility score from 0 to 100'),
   summary: z.string().describe('Overall analysis summary with key findings and recommendations'),
+  jdBreakdown: z.string().describe(
+    'Markdown-formatted structured breakdown of the job description itself. Use ## headings and bullet lists. Include sections: 岗位概述 (role overview), 核心职责 (key responsibilities), 技术要求 (tech requirements), 加分项 (preferred qualifications). Keep it concise and scannable so the user can understand the job at a glance.'
+  ),
 });
 
 export type JdAnalysisOutput = z.infer<typeof jdAnalysisOutputSchema>;

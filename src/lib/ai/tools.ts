@@ -5,6 +5,7 @@ import { getModel, getJsonProviderOptions, type AIConfig } from '@/lib/ai/provid
 import { jdAnalysisOutputSchema } from '@/lib/ai/jd-analysis-schema';
 import { extractJson } from '@/lib/ai/extract-json';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
+import { sanitizeSectionsForAI, stripPersonalInfoForAI } from '@/lib/resume/sanitize';
 
 export function createExecutableTools(resumeId: string, aiConfig: AIConfig) {
   return {
@@ -237,14 +238,13 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const model = getModel(aiConfig);
-        const resumeContext = JSON.stringify(resume.sections);
-
+        const resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
         const result = await generateText({
           model,
           maxOutputTokens: 8192,
           system: `You are an expert resume analyst. Analyze the match between the resume and job description. Be specific and actionable.
 CRITICAL: You are a JSON API. Your entire response must be a single valid JSON object starting with { and ending with }. Do NOT use markdown syntax. Do NOT wrap in code fences.`,
-          prompt: `## Resume Data\n${resumeContext}\n\n## Job Description\n${jobDescription}\n\nReturn a JSON object with: overallScore (0-100), keywordMatches (string[]), missingKeywords (string[]), suggestions ([{section, current, suggested}]), atsScore (0-100), summary (string).`,
+          prompt: `## Resume Data\n${resumeContext}\n\n## Job Description\n${jobDescription}\n\nReturn a JSON object with: overallScore (0-100), keywordMatches (string[]), missingKeywords (string[]), suggestions ([{section, current, suggested}]), atsScore (0-100), summary (string), jdBreakdown (string — markdown-formatted structured breakdown of the JD using ## headings and bullet lists).`,
           providerOptions: getJsonProviderOptions(aiConfig),
         });
 
@@ -272,12 +272,16 @@ CRITICAL: You are a JSON API. Your entire response must be a single valid JSON o
         });
 
         // Translate each section concurrently (max 4 at a time)
-        const sections = resume.sections.map((s: any) => ({
-          sectionId: s.id,
-          type: s.type,
-          title: s.title,
-          content: s.content,
-        }));
+        // Strip PII before sending to AI; merge back after translation
+        const strippedFields = new Map<string, Record<string, unknown>>();
+        const sections = resume.sections.map((s: any) => {
+          if (s.type === 'personal_info') {
+            const { content, stripped } = stripPersonalInfoForAI(s.content);
+            if (Object.keys(stripped).length > 0) strippedFields.set(s.id, stripped);
+            return { sectionId: s.id, type: s.type, title: s.title, content };
+          }
+          return { sectionId: s.id, type: s.type, title: s.title, content: s.content };
+        });
 
         const CONCURRENCY = 4;
         let succeeded = 0;
@@ -327,10 +331,13 @@ Rules:
           if (!r.ok) { failed++; continue; }
           const translated = r.data;
           const sectionType: string = typeById.get(translated.sectionId) || '';
+          // Merge back stripped PII fields so they survive the write
+          const saved = strippedFields.get(translated.sectionId);
+          const content = saved ? { ...translated.content, ...saved } : translated.content;
           await resumeRepository.updateSection(translated.sectionId, {
             title: translated.title,
             // A mistranslated structure could crash the renderer — normalize it (issue #87).
-            content: normalizeSectionContent(sectionType, translated.content),
+            content: normalizeSectionContent(sectionType, content),
           });
           succeeded++;
         }

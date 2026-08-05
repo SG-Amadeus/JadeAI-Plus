@@ -2,10 +2,14 @@
   "name": "jadeai",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "jadeai": "./bin/jadeai"
+  },
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "dev": "next dev --turbopack",
     "build:export-css": "tsx scripts/build-export-css.ts",
+    "cli": "tsx cli/index.ts",
     "prebuild": "pnpm build:export-css",
     "build": "next build",
     "start": "next start",

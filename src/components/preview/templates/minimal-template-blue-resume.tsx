@@ -1,0 +1,365 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import type {
+  Resume,
+  PersonalInfoContent,
+  SummaryContent,
+  ProjectsContent,
+  CertificationsContent,
+  LanguagesContent,
+  CustomContent,
+  GitHubContent,
+} from '@/types/resume';
+import { degreeField, isSectionEmpty, md } from '../utils';
+import { AvatarImage } from '../avatar-image';
+import { QrCodesPreview } from '../qr-codes-preview';
+
+const BLUE = '#073b82';
+
+export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
+  const personalInfo = resume.sections.find((section) => section.type === 'personal_info');
+  const pi = (personalInfo?.content || {}) as PersonalInfoContent;
+  const zh = resume.language === 'zh';
+
+  const personalItems = [
+    { label: zh ? '性别' : 'Gender', value: pi.gender },
+    { label: zh ? '电话' : 'Phone', value: pi.phone },
+    { label: zh ? '年龄' : 'Age', value: pi.age },
+    { label: zh ? '邮箱' : 'Email', value: pi.email },
+    { label: zh ? '政治面貌' : 'Political status', value: pi.politicalStatus },
+    { label: zh ? '微信' : 'WeChat', value: pi.wechat },
+    { label: zh ? '民族' : 'Ethnicity', value: pi.ethnicity },
+    { label: zh ? '籍贯' : 'Hometown', value: pi.hometown },
+    { label: zh ? '婚姻状况' : 'Marital status', value: pi.maritalStatus },
+    { label: zh ? '工作年限' : 'Experience', value: pi.yearsOfExperience },
+    { label: zh ? '学历' : 'Education', value: pi.educationLevel },
+    { label: zh ? '所在地' : 'Location', value: pi.location },
+    { label: 'LinkedIn', value: pi.linkedin },
+    { label: 'GitHub', value: pi.github },
+  ].filter((item) => item.value);
+
+  return (
+    <div
+      className="mx-auto min-h-[297mm] w-full max-w-[210mm] bg-white px-[8mm] pb-[8mm] pt-[4mm] text-[11px] leading-[1.45] text-[#111827] shadow-lg print:shadow-none"
+      style={{ fontFamily: "'Microsoft YaHei', 'PingFang SC', 'SimSun', sans-serif" }}
+    >
+      <header className="relative">
+        <div className="min-h-[24px] pr-[78px] text-center">
+          <h1 className="text-[20px] font-bold leading-none tracking-[0.08em]" style={{ color: BLUE }}>
+            {pi.fullName || (zh ? '姓名' : 'Your Name')}
+          </h1>
+          {pi.jobTitle && (
+            <p className="mt-1 text-[10px] font-medium" style={{ color: BLUE }}>
+              {pi.jobTitle}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_68px] gap-x-5">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+            {personalItems.map((item) => (
+              <div key={`${item.label}-${String(item.value)}`} className="flex min-w-0 items-baseline">
+                <span className="mr-1 shrink-0 font-bold" style={{ color: BLUE }}>
+                  ▸
+                </span>
+                <span className="mr-1 shrink-0 font-medium text-[#111827]">{item.label}:</span>
+                <span className="min-w-0 break-all text-[#111827]">{String(item.value)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="absolute right-0 top-0 flex h-[66px] w-[62px] items-center justify-center overflow-hidden">
+            {pi.avatar ? (
+              <AvatarImage
+                src={pi.avatar}
+                avatarStyle={resume.themeConfig?.avatarStyle}
+                size={62}
+                className="h-[66px] w-[62px] shrink-0 object-cover"
+              />
+            ) : (
+              <span className="text-[17px] font-bold" style={{ color: BLUE }}>
+                {zh ? '照片' : 'Photo'}
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main>
+        {resume.sections
+          .filter((section) => section.visible && section.type !== 'personal_info' && !isSectionEmpty(section))
+          .map((section) => (
+            <section key={section.id} className="mb-4" data-section>
+              <SectionTitle title={section.title} />
+              <MinimalSectionContent section={section} lang={resume.language} />
+            </section>
+          ))}
+      </main>
+    </div>
+  );
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className="mb-2 mt-3 flex items-center gap-3">
+      <div className="flex-1 border-t-2 border-dotted" style={{ borderColor: BLUE }} />
+      <h2 className="shrink-0 text-[12px] font-bold" style={{ color: BLUE }}>
+        {title}
+      </h2>
+      <div className="flex-1 border-t-2 border-dotted" style={{ borderColor: BLUE }} />
+    </div>
+  );
+}
+
+function EntryHeader({
+  left,
+  middle,
+  right,
+}: {
+  left?: ReactNode;
+  middle?: ReactNode;
+  right?: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center text-[10.5px] font-semibold leading-5" style={{ color: BLUE }}>
+      {left && <span className="max-w-[38%] shrink-0 truncate">{left}</span>}
+      {(left || middle) && <span className="mx-2 h-px min-w-5 flex-1 bg-[#073b82]" />}
+      {middle && <span className="max-w-[34%] shrink-0 truncate">{middle}</span>}
+      {middle && right && <span className="mx-2 h-px min-w-5 flex-1 bg-[#073b82]" />}
+      {right && <span className="shrink-0 whitespace-nowrap text-[10px] tracking-wide">{right}</span>}
+    </div>
+  );
+}
+
+function DateRange({ item, lang }: { item: any; lang?: string }) {
+  if (!item.startDate && !item.endDate && !item.current) return null;
+
+  const end = item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '');
+  return (
+    <>
+      {item.startDate}
+      {item.startDate && end ? ' ~ ' : ''}
+      {end}
+    </>
+  );
+}
+
+function RichText({ html, className = '' }: { html?: string; className?: string }) {
+  if (!html) return null;
+  return (
+    <div
+      className={`[&_p]:my-0 [&_ul]:my-0 [&_ol]:my-0 [&_li]:my-0 ${className}`}
+      dangerouslySetInnerHTML={{ __html: md(html) }}
+    />
+  );
+}
+
+function HighlightList({ items }: { items?: string[] }) {
+  if (!items?.length) return null;
+
+  return (
+    <ul className="mt-1 space-y-0.5">
+      {items.map((highlight, index) => (
+        <li key={index} className="grid grid-cols-[9px_1fr] text-[10.5px] leading-[1.55] text-[#20242c]">
+          <span className="font-bold" style={{ color: BLUE }}>
+            •
+          </span>
+          <RichText html={highlight} className="min-w-0" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MinimalSectionContent({ section, lang }: { section: any; lang?: string }) {
+  const content = section.content;
+  if (!content) return null;
+
+  if (section.type === 'summary') {
+    return (
+      <RichText
+        html={(content as SummaryContent).text}
+        className="text-[10.5px] leading-[1.65] text-[#20242c]"
+      />
+    );
+  }
+
+  if (section.type === 'work_experience') {
+    return (
+      <div className="space-y-3">
+        {(content.items || []).map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader
+              left={item.company || item.position}
+              middle={item.company ? item.position : undefined}
+              right={<DateRange item={item} lang={lang} />}
+            />
+            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+            {item.technologies?.length > 0 && (
+              <p className="mt-1 text-[10px] text-[#374151]">
+                <span className="font-semibold" style={{ color: BLUE }}>
+                  {lang === 'zh' ? '项目：' : 'Project: '}
+                </span>
+                {item.technologies.join(' / ')}
+              </p>
+            )}
+            <HighlightList items={item.highlights} />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'education') {
+    return (
+      <div className="space-y-3">
+        {(content.items || []).map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader
+              left={item.institution}
+              middle={degreeField(item.degree, item.field)}
+              right={<DateRange item={item} lang={lang} />}
+            />
+            {item.gpa && (
+              <p className="mt-1 text-[10px] text-[#20242c]">
+                <span className="font-semibold" style={{ color: BLUE }}>
+                  GPA：
+                </span>
+                {item.gpa}
+              </p>
+            )}
+            <HighlightList items={item.highlights} />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'skills') {
+    return (
+      <div className="space-y-1">
+        {(content.categories || []).map((category: any) => (
+          <p key={category.id} className="text-[10.5px] leading-[1.55] text-[#20242c]">
+            {category.name && (
+              <span className="font-semibold" style={{ color: BLUE }}>
+                {category.name}：
+              </span>
+            )}
+            {category.skills?.join(' / ')}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'projects') {
+    const items = (content as ProjectsContent).items || [];
+    return (
+      <div className="space-y-3">
+        {items.map((item: any) => {
+          const projectRole = item.role || item.position;
+          return (
+            <article key={item.id} className="break-inside-avoid">
+              <EntryHeader
+                left={item.name}
+                middle={projectRole}
+                right={<DateRange item={item} lang={lang} />}
+              />
+              <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+              {item.technologies?.length > 0 && (
+                <p className="mt-1 text-[10px] text-[#374151]">
+                  <span className="font-semibold" style={{ color: BLUE }}>
+                    {lang === 'zh' ? '项目：' : 'Project: '}
+                  </span>
+                  {item.technologies.join(' / ')}
+                </p>
+              )}
+              <HighlightList items={item.highlights} />
+            </article>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (section.type === 'github') {
+    const items = (content as GitHubContent).items || [];
+    return (
+      <div className="space-y-3">
+        {items.map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader
+              left={item.name}
+              middle={item.language}
+              right={item.stars != null ? `★ ${item.stars.toLocaleString()}` : undefined}
+            />
+            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'certifications') {
+    const items = (content as CertificationsContent).items || [];
+    return (
+      <div className="space-y-2">
+        {items.map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader left={item.name} middle={item.issuer} right={item.date} />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'languages') {
+    const items = (content as LanguagesContent).items || [];
+    return (
+      <div className="flex flex-wrap gap-x-8 gap-y-1 text-[10.5px]">
+        {items.map((item: any) => (
+          <span key={item.id}>
+            <span className="font-semibold" style={{ color: BLUE }}>
+              {item.language}：
+            </span>
+            <span className="text-[#20242c]">{item.proficiency}</span>
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'custom') {
+    const items = (content as CustomContent).items || [];
+    return (
+      <div className="space-y-3">
+        {items.map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader left={item.title} middle={item.subtitle} right={item.date} />
+            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  if (section.type === 'qr_codes') {
+    return <QrCodesPreview items={(content as any).items || []} />;
+  }
+
+  if (content?.items) {
+    return (
+      <div className="space-y-3">
+        {content.items.map((item: any) => (
+          <article key={item.id} className="break-inside-avoid">
+            <EntryHeader left={item.name || item.title || item.language} right={item.date} />
+            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
+}

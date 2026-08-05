@@ -38,6 +38,8 @@ export const resumes = sqliteTable('resumes', {
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
   sharePassword: text('share_password'),
   viewCount: integer('view_count').notNull().default(0),
+  parentId: text('parent_id'),
+  derivedAt: integer('derived_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });

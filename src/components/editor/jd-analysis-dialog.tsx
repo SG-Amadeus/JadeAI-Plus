@@ -7,8 +7,9 @@ import { useRouter } from '@/i18n/routing';
 import {
   Loader2, RotateCcw, Target, ShieldCheck, Lightbulb, AlertTriangle,
   Wand2, Copy, Trash2, FileSearch, ArrowUp, ArrowDown, Minus, ChevronLeft,
-  Briefcase, ChevronDown,
+  Briefcase, ChevronDown, Layers,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ interface JdAnalysisResult {
   suggestions: { section: string; current: string; suggested: string }[];
   atsScore: number;
   summary: string;
+  jdBreakdown?: string;
 }
 
 interface HistoryItem {
@@ -161,6 +163,19 @@ function JdAnalysisResultView({ result, jobDescription, t }: { result: JdAnalysi
         <ScoreCircle score={result.overallScore} label={t('overallScore')} />
         <ScoreCircle score={result.atsScore} label={t('atsScore')} />
       </div>
+
+      {/* JD Breakdown */}
+      {result.jdBreakdown && (
+        <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <h4 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-2">
+            <Layers className="h-4 w-4 text-zinc-400" />
+            {t('jdBreakdown')}
+          </h4>
+          <div className="prose prose-sm max-w-none text-zinc-600 dark:text-zinc-400 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-zinc-800 dark:[&_h2]:text-zinc-200 [&_h2]:mt-3 [&_h2]:mb-1 [&_ul]:my-1 [&_li]:text-sm [&_li]:leading-relaxed">
+            <ReactMarkdown>{result.jdBreakdown}</ReactMarkdown>
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       <div className="space-y-2">

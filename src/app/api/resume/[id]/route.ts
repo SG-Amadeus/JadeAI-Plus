@@ -63,9 +63,14 @@ export async function PUT(
 
     // Sync sections: create new, update existing, delete removed
     if (sections && Array.isArray(sections)) {
+      // On derivatives, filter out personal_info — it must come from the root
+      const filteredSections = (resume as any).parentId
+        ? sections.filter((s: any) => s.type !== 'personal_info')
+        : sections;
+
       const existingSections = resume.sections || [];
       const existingIds = new Set(existingSections.map((s: any) => s.id));
-      const incomingIds = new Set(sections.map((s: any) => s.id));
+      const incomingIds = new Set(filteredSections.map((s: any) => s.id));
 
       // Delete sections that were removed by the user
       for (const existing of existingSections) {
@@ -74,7 +79,7 @@ export async function PUT(
         }
       }
 
-      for (const section of sections) {
+      for (const section of filteredSections) {
         if (existingIds.has(section.id)) {
           // Update existing section
           await resumeRepository.updateSection(section.id, {
@@ -126,7 +131,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    await resumeRepository.delete(id);
+    const force = request.nextUrl.searchParams.get('force') === 'true';
+    if (force) {
+      await resumeRepository.deleteRecursively(id);
+      return NextResponse.json({ success: true });
+    }
+    const result = await resumeRepository.delete(id);
+    if (!result.deleted) {
+      return NextResponse.json(
+        { error: `Resume has ${result.derivativeCount} derivative(s). Delete them first or use ?force=true`, derivativeCount: result.derivativeCount },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('DELETE /api/resume/[id] error:', error);

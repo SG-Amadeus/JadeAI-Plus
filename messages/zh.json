@@ -95,6 +95,7 @@
     "templateZigzag": "锯齿",
     "templateRibbon": "缎带",
     "templateMosaic": "马赛克",
+    "templateMinimalBlue": "简约蓝",
     "upload": {
       "fromTemplate": "从模板创建",
       "fromFile": "上传文件",
@@ -359,6 +360,7 @@
     "deleteConfirm": "确定删除这条记录？",
     "deleteConfirmDesc": "此操作无法撤销，删除后将无法恢复。",
     "deleted": "已删除",
+    "jdBreakdown": "岗位拆解",
     "jdPreview": "JD 摘要",
     "viewDetail": "查看详情",
     "loadingHistory": "加载历史...",

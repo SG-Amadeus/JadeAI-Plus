@@ -2,6 +2,35 @@ import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../index';
 import { resumes, resumeSections } from '../schema';
 
+const INHERITED_PREFIX = 'inherited:';
+
+async function loadWithMerge(resume: any) {
+  const sections = await db.select().from(resumeSections)
+    .where(eq(resumeSections.resumeId, resume.id))
+    .orderBy(resumeSections.sortOrder);
+
+  if (!resume.parentId) return { ...resume, sections };
+
+  // Inject root's personal_info as an inherited section
+  const root = await db.select().from(resumes).where(eq(resumes.id, resume.parentId)).limit(1);
+  if (!root[0] || root[0].userId !== resume.userId) return { ...resume, sections };
+
+  const rootSections = await db.select().from(resumeSections)
+    .where(eq(resumeSections.resumeId, root[0].id));
+  const personalInfo = rootSections.find((s: any) => s.type === 'personal_info');
+  if (!personalInfo) return { ...resume, sections };
+
+  const inherited = {
+    ...personalInfo,
+    id: `${INHERITED_PREFIX}${root[0].id}:${personalInfo.id}`,
+    resumeId: resume.id,
+    inherited: true,
+    inheritedFrom: root[0].id,
+  };
+
+  return { ...resume, sections: [inherited, ...sections] };
+}
+
 export const resumeRepository = {
   async findAllByUserId(userId: string) {
     return db.select().from(resumes).where(eq(resumes.userId, userId)).orderBy(desc(resumes.updatedAt));
@@ -10,8 +39,7 @@ export const resumeRepository = {
   async findById(id: string) {
     const resume = await db.select().from(resumes).where(eq(resumes.id, id)).limit(1);
     if (!resume[0]) return null;
-    const sections = await db.select().from(resumeSections).where(eq(resumeSections.resumeId, id)).orderBy(resumeSections.sortOrder);
-    return { ...resume[0], sections };
+    return loadWithMerge(resume[0]);
   },
 
   async create(data: { userId: string; title?: string; template?: string; language?: string }) {
@@ -32,6 +60,20 @@ export const resumeRepository = {
   },
 
   async delete(id: string) {
+    // Guard: check for derivatives before deleting
+    const children = await db.select({ id: resumes.id }).from(resumes).where(eq(resumes.parentId, id));
+    if (children.length > 0) {
+      return { deleted: false, derivativeCount: children.length };
+    }
+    await db.delete(resumes).where(eq(resumes.id, id));
+    return { deleted: true };
+  },
+
+  async deleteRecursively(id: string) {
+    const children = await db.select({ id: resumes.id }).from(resumes).where(eq(resumes.parentId, id));
+    for (const child of children) {
+      await db.delete(resumes).where(eq(resumes.id, child.id));
+    }
     await db.delete(resumes).where(eq(resumes.id, id));
   },
 
@@ -40,6 +82,10 @@ export const resumeRepository = {
     if (!original) return null;
 
     const newId = crypto.randomUUID();
+    // Derivative of a derivative keeps the same parent
+    const parentId = original.parentId ?? null;
+    const derivedAt = parentId ? new Date() : null;
+
     await db.insert(resumes).values({
       id: newId,
       userId,
@@ -47,9 +93,16 @@ export const resumeRepository = {
       template: original.template,
       themeConfig: original.themeConfig,
       language: original.language,
-    });
+      parentId,
+      derivedAt,
+    } as any);
 
     for (const section of original.sections) {
+      // Skip inherited sections — they reference the root
+      if ((section as any).inherited) continue;
+      // If duplicating a derivative, skip personal_info (it's inherited from root)
+      if (parentId && section.type === 'personal_info') continue;
+
       await db.insert(resumeSections).values({
         id: crypto.randomUUID(),
         resumeId: newId,
@@ -64,12 +117,96 @@ export const resumeRepository = {
     return this.findById(newId);
   },
 
+  // ── Derive / Detach ──
+
+  async derive(rootId: string, userId: string, data: { title?: string; template?: string; language?: string }) {
+    const root = await db.select().from(resumes).where(eq(resumes.id, rootId)).limit(1);
+    if (!root[0]) return null;
+    if (root[0].userId !== userId) return null;
+    if (root[0].parentId) return { error: 'CANNOT_DERIVE_FROM_DERIVATIVE' };
+
+    const newId = crypto.randomUUID();
+    await db.insert(resumes).values({
+      id: newId,
+      userId,
+      title: data.title || `${root[0].title} (派生)`,
+      template: data.template || root[0].template,
+      language: data.language || root[0].language,
+      themeConfig: root[0].themeConfig,
+      parentId: rootId,
+      derivedAt: new Date(),
+    } as any);
+
+    // Copy all sections EXCEPT personal_info (inherited from root)
+    const sections = await db.select().from(resumeSections)
+      .where(eq(resumeSections.resumeId, rootId))
+      .orderBy(resumeSections.sortOrder);
+
+    for (const section of sections) {
+      if (section.type === 'personal_info') continue;
+      await db.insert(resumeSections).values({
+        id: crypto.randomUUID(),
+        resumeId: newId,
+        type: section.type,
+        title: section.title,
+        sortOrder: section.sortOrder,
+        visible: section.visible,
+        content: section.content,
+      });
+    }
+
+    return this.findById(newId);
+  },
+
+  async detach(id: string) {
+    const resume = await db.select().from(resumes).where(eq(resumes.id, id)).limit(1);
+    if (!resume[0]) return null;
+    if (!resume[0].parentId) return { error: 'ALREADY_ROOT' };
+
+    // Materialize root's personal_info as a real section
+    const root = await db.select().from(resumes).where(eq(resumes.id, resume[0].parentId)).limit(1);
+    if (root[0]) {
+      const rootSections = await db.select().from(resumeSections)
+        .where(eq(resumeSections.resumeId, root[0].id));
+      const personalInfo = rootSections.find((s: any) => s.type === 'personal_info');
+      if (personalInfo) {
+        // Insert at sortOrder -1 so it comes first after reorder
+        await db.insert(resumeSections).values({
+          id: crypto.randomUUID(),
+          resumeId: id,
+          type: 'personal_info',
+          title: personalInfo.title,
+          sortOrder: -1,
+          visible: personalInfo.visible,
+          content: personalInfo.content,
+        } as any);
+
+        // Normalize sort orders
+        const sections = await db.select().from(resumeSections)
+          .where(eq(resumeSections.resumeId, id))
+          .orderBy(resumeSections.sortOrder);
+        for (let i = 0; i < sections.length; i++) {
+          if (sections[i].sortOrder !== i) {
+            await db.update(resumeSections)
+              .set({ sortOrder: i, updatedAt: new Date() })
+              .where(eq(resumeSections.id, sections[i].id));
+          }
+        }
+      }
+    }
+
+    await db.update(resumes)
+      .set({ parentId: null, derivedAt: null, updatedAt: new Date() } as any)
+      .where(eq(resumes.id, id));
+
+    return this.findById(id);
+  },
+
   // Share operations
   async findByShareToken(token: string) {
     const resume = await db.select().from(resumes).where(eq(resumes.shareToken, token)).limit(1);
     if (!resume[0]) return null;
-    const sections = await db.select().from(resumeSections).where(eq(resumeSections.resumeId, resume[0].id)).orderBy(resumeSections.sortOrder);
-    return { ...resume[0], sections };
+    return loadWithMerge(resume[0]);
   },
 
   async incrementViewCount(id: string) {
@@ -96,15 +233,19 @@ export const resumeRepository = {
   },
 
   async updateSection(id: string, data: Partial<{ title: string; sortOrder: number; visible: boolean; content: unknown }>) {
+    // Skip synthetic inherited ids — they don't exist in DB
+    if (id.startsWith(INHERITED_PREFIX)) return;
     await db.update(resumeSections).set({ ...data, updatedAt: new Date() } as any).where(eq(resumeSections.id, id));
   },
 
   async deleteSection(id: string) {
+    if (id.startsWith(INHERITED_PREFIX)) return;
     await db.delete(resumeSections).where(eq(resumeSections.id, id));
   },
 
   async updateSectionOrder(sections: { id: string; sortOrder: number }[]) {
     for (const s of sections) {
+      if (s.id.startsWith(INHERITED_PREFIX)) continue;
       await db.update(resumeSections).set({ sortOrder: s.sortOrder, updatedAt: new Date() }).where(eq(resumeSections.id, s.id));
     }
   },
