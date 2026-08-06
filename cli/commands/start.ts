@@ -7,7 +7,7 @@ export async function start(_client: JadeClient, out: Output, args: ParsedArgs):
   const port = (args.flags.port as string) || '3000';
   const baseUrl = `http://localhost:${port}`;
 
-  out.progress(`Starting JadeAI server on ${baseUrl} ...`);
+  out.progress(`Starting JadeAI-Plus server on ${baseUrl} ...`);
 
   const child = spawn('pnpm', ['dev', '--port', port], {
     stdio: 'inherit',

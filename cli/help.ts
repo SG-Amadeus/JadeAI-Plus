@@ -46,7 +46,7 @@ export const HELP_SECTION = [
   cmd('section delete', 'Delete a section'),
 ].join('\n');
 
-export const HELP_PING = `${cmd('ping', 'Test connectivity to the JadeAI server')}`;
+export const HELP_PING = `${cmd('ping', 'Test connectivity to the JadeAI-Plus server')}`;
 export const HELP_START = `${cmd('start', 'Start the dev server (pnpm dev)')}`;
 
 export const HELP_PROFILE = [
@@ -80,14 +80,14 @@ export function getTopHelp(): string {
 // ── Per-command help strings ──
 
 export const CMD_HELP: Record<string, string> = {
-  ping: `Test connectivity to the JadeAI server.
+  ping: `Test connectivity to the JadeAI-Plus server.
 
 Usage: jadeai ping
 
 Reports server version, authenticated user, and latency.
 Exit code 0 = success, 2 = network error (server unreachable), 3 = API error (auth failed).`,
 
-  start: `Start the JadeAI dev server.
+  start: `Start the JadeAI-Plus dev server.
 
 Usage: jadeai start [options]
 

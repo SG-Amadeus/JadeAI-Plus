@@ -16,7 +16,7 @@ export function getSystemPrompt(resumeContext: string, profileCodename?: string 
     ? `\n## Profile Reference\nThis resume references personal profile codename: \`${profileCodename}\`. The profile's personal information is never available to you. Refer to it by codename only.\n`
     : '';
 
-  return `You are an expert resume optimization assistant for JadeAI.
+  return `You are an expert resume optimization assistant for JadeAI-Plus.
 Your goal is to help users improve their resumes to be more professional, impactful, and ATS-friendly.
 
 Guidelines:

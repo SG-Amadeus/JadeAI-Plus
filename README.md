@@ -35,7 +35,7 @@ jadeai push my-resume --from ./data/                    # Sync edits back
 jadeai resume export my-resume --format pdf --out cv.pdf   # Export PDF
 ```
 
-**20 CLI commands** covering the full resume lifecycle: template browsing, CRUD, section/item management, profile management, import/export, and server management.
+**25 CLI commands** covering the full resume lifecycle: template browsing, CRUD, section/item management, profile management, experience library, import/export, and server management.
 
 ### Root/Derivative Branching — One Profile, Many JDs
 
@@ -130,20 +130,18 @@ Auth defaults to the seeded demo user. Override via `--fingerprint` only when us
 
 ## Getting Started
 
-### Docker (Recommended)
+### Docker (Upstream)
+
+The upstream JadeAI Docker image does **not** include Plus enhancements (CLI, branching, privacy hardening). Use the local setup below for full features.
 
 ```bash
-openssl rand -base64 32
-
 docker run -d -p 3000:3000 \
   -e AUTH_SECRET=<your-generated-secret> \
   -v jadeai-data:/app/data \
   twwch/jadeai:latest
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Database auto-migrates and seeds on first start.
-
-### Local Development
+### Local Development (Recommended)
 
 ```bash
 git clone https://github.com/SG-Amadeus/JadeAI-Plus.git
@@ -169,6 +167,30 @@ jadeai start &     # start server
 jadeai ping        # test connectivity
 ```
 
+### Claude Code Skills Setup
+
+The `.claude/skills/jadeai/` directory contains a Claude Code skill that teaches AI agents the full `jadeai` CLI workflow.
+
+**Option 1: Symlink (recommended — auto-updates with repo)**
+
+```bash
+mkdir -p ~/.claude/skills
+ln -s "$(pwd)/.claude/skills/jadeai" ~/.claude/skills/jadeai
+```
+
+**Option 2: Copy (standalone, no repo dependency)**
+
+```bash
+mkdir -p ~/.claude/skills
+cp -r .claude/skills/jadeai ~/.claude/skills/jadeai
+```
+
+**Option 3: Project-local (only active within this repo)**
+
+No action needed. Claude Code auto-discovers skills in `.claude/skills/` at the repo root.
+
+After setup, restart Claude Code. The skill activates on prompts like "create a resume", "export my resume to PDF", "tailor my resume for a JD", or "manage my experience library".
+
 ## CLI Command Reference
 
 | Command | Description |
@@ -183,6 +205,7 @@ jadeai ping        # test connectivity
 | `jadeai section list/add/update/delete/reorder` | Section management |
 | `jadeai item add/update/delete/reorder` | Item management |
 | `jadeai profile list` | List profile codenames |
+| `jadeai experience list/show/create/update/delete` | Experience library CRUD |
 | `jadeai pull <resume-id> --out <dir>` | Export sections as local JSON |
 | `jadeai push <resume-id> --from <dir>` | Sync local JSON back to server |
 
@@ -256,7 +279,7 @@ src/
 ├── hooks/                      # Custom React hooks
 └── stores/                     # Zustand stores
 cli/
-├── commands/                   # 23 CLI command handlers
+├── commands/                   # 25 CLI command handlers
 ├── index.ts                    # CLI entry + arg parser
 ├── client.ts                   # HTTP client (zero deps)
 └── config.ts                   # Configuration helpers
@@ -271,7 +294,23 @@ cli/
 
 ## License
 
-[Apache License 2.0](LICENSE) — same as the original JadeAI project.
+This project is licensed under the [Apache License 2.0](LICENSE), same as the original JadeAI project.
+
+**What Apache 2.0 permits:**
+
+- **Commercial use** — use the software for any commercial purpose
+- **Modification** — freely modify, adapt, and enhance the source code
+- **Distribution** — redistribute the original or modified versions
+- **Patent use** — explicit grant of patent rights from contributors
+- **Private use** — use the software privately without sharing changes
+
+**What Apache 2.0 requires:**
+
+- Include the original copyright notice and license in any distribution
+- State any significant modifications made to the original code
+- Derivative works may be licensed under different terms (no copyleft)
+
+JadeAI-Plus is a derivative work of [LingyiChen-AI/JadeAI](https://github.com/LingyiChen-AI/JadeAI), created under the rights granted by the Apache 2.0 license.
 
 ---
 

@@ -12,7 +12,7 @@ export function requireUiClient(request: Request): { ok: boolean; response?: Nex
     return {
       ok: false,
       response: NextResponse.json(
-        { error: 'Personal profile data is only accessible from the JadeAI web UI' },
+        { error: 'Personal profile data is only accessible from the JadeAI-Plus web UI' },
         { status: 403 },
       ),
     };
