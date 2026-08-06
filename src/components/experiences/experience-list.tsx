@@ -22,7 +22,7 @@ const DEFAULT_WORK_DATA = {
   startDate: '',
   endDate: '',
   current: false,
-  description: '',
+  summary: '',
   technologies: [],
   highlights: [],
   notes: '',
@@ -34,7 +34,7 @@ const DEFAULT_INTERNSHIP_DATA = {
   startDate: '',
   endDate: '',
   current: false,
-  description: '',
+  summary: '',
   technologies: [],
   highlights: [],
   notes: '',
@@ -45,7 +45,7 @@ const DEFAULT_PROJECT_DATA = {
   url: '',
   startDate: '',
   endDate: '',
-  description: '',
+  summary: '',
   technologies: [],
   highlights: [],
   notes: '',
@@ -107,7 +107,7 @@ export function ExperienceList({
   );
 
   return (
-    <Tabs defaultValue="work">
+    <Tabs defaultValue="work" suppressHydrationWarning>
       <TabsList className="mb-6">
         <TabsTrigger value="work" className="cursor-pointer">
           {t('tabWork')} ({workExperiences.length})

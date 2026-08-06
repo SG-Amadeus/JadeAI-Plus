@@ -185,7 +185,9 @@
     "retry": "Retry",
     "deleteConfirm": "Confirm Delete",
     "notes": "Internal Notes",
-    "notesHint": "Detailed background, metrics, stories — AI references these but they never appear on the resume"
+    "notesHint": "Detailed background, metrics, stories — AI references these but they never appear on the resume",
+    "summaryHint": "Write a complete narrative of this experience — AI will extract highlights from it for each JD",
+    "highlightsHint": "AI can generate these from your summary per JD, or you can pre-fill manually"
   },
   "editor": {
     "edit": "Edit",
@@ -262,6 +264,7 @@
       "endDate": "End Date",
       "current": "Present",
       "description": "Description",
+      "summary": "Full Experience Summary",
       "highlights": "Highlights",
       "institution": "Institution",
       "degree": "Degree",

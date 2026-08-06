@@ -137,7 +137,9 @@ jadeai experience delete <experience-id> --force
 Experience data is non-PII (work/project/internship records) and safe for AI/CLI access. These commands have full access to all fields including internal `notes`.
 
 - `experience create` requires `--type` (work|project|internship) and `--data` (inline JSON or `@file.json`).
+  - **Always prefer `@file.json` for Chinese text or multi-line content.** Inline JSON with Chinese quotes or newlines will fail to parse in the shell. Write the JSON to a file in the current working directory, then reference it with `@filename.json`.
 - `experience update` does a partial merge — only send fields you want to change. At least one of `--type` or `--data` is required.
+  - Same rule applies: use `@file.json` for any data containing Chinese or newlines.
 - `experience delete` requires `--force` to prevent accidental deletion.
 - The `notes` field on each entry is for AI reference only; it is automatically stripped when copying to a resume.
 
@@ -225,7 +227,7 @@ Experience entries (stored in `experiences` table, managed via `jadeai experienc
   "startDate": "2023-01",
   "endDate": "2024-12",
   "current": false,
-  "description": "Built and maintained...",
+  "summary": "Full narrative description of the role — responsibilities, impact, team context, key projects. AI reads this as the source of truth to generate JD-specific highlights.",
   "technologies": ["TypeScript", "React", "Node.js"],
   "highlights": ["Reduced latency by 40%", "Led team of 5"],
   "notes": "Internal context: this was a greenfield project..."
@@ -240,14 +242,23 @@ Experience entries (stored in `experiences` table, managed via `jadeai experienc
   "url": "https://github.com/user/project",
   "startDate": "2024-03",
   "endDate": "2024-08",
-  "description": "A real-time analytics dashboard...",
+  "summary": "Full narrative description of the project — purpose, architecture, personal contribution, outcomes. AI reads this as the source of truth.",
   "technologies": ["Python", "FastAPI", "PostgreSQL"],
   "highlights": ["1k+ GitHub stars", "Featured on Product Hunt"],
   "notes": "Built over weekends; the streaming architecture is worth highlighting"
 }
 ```
 
-The `notes` field is for AI reference — it provides context when optimizing for a JD, but is **automatically stripped** when copying entries to a resume.
+**Key data model rules:**
+
+- `summary` is the **source of truth** — a complete, flowing narrative of the experience. Write in full prose, telling the story in rich detail. AI reads this to deeply understand the experience, then produces JD-specific highlights. The richer the narrative, the better the AI output.
+  - Format: full prose with paragraphs. Can use Markdown headings to organize by angle, but each section is narrative text.
+  - Key distinction: `summary` = complete story (完整叙事, source material), `highlights` = JD-specific retellings (针对不同 JD 的经历描述, derivative).
+  - Suggested angles to cover: project context & goals, personal role & responsibilities, technical architecture & decisions, team & collaboration, measurable outcomes & impact, challenges & lessons learned, business value delivered.
+  - Anti-pattern: a single sentence or a list of bullet points. Aim for multiple paragraphs of flowing narrative.
+- `highlights` are **JD-specific retellings** of the experience — NOT one-line bullet points. Each highlight is a paragraph-level description that re-frames the same experience to emphasize what a particular JD values. The same `summary` should yield different highlights for a frontend role, a backend role, or a management role. AI generates these per JD from the `summary`; manual pre-fills are optional and will be overwritten or augmented during JD optimization.
+- `notes` is for AI internal reference — stripped when copying entries to a resume.
+- When copying to a resume section, `summary` is mapped to the resume's `description` field, and `notes` is stripped.
 
 ## Root/Derivative Branching
 
@@ -332,17 +343,44 @@ jadeai pull <uuid> --out ./data/
 ### Recipe 5: Build experience library and create a resume from it
 
 ```bash
-# Populate the library from various sources
-jadeai experience create --type work --data '{"company":"Acme","position":"SDE","startDate":"2023-01","endDate":"2024-12","description":"Built APIs...","technologies":["Go","gRPC"],"highlights":["Reduced p99 by 60%"],"notes":"Greenfield project, led 3-person team"}'
+# Step 1: Write experience data to a JSON file (avoids shell escaping issues with Chinese/newlines)
+cat > exp-work-1.json << 'ENDJSON'
+{
+  "company": "某大厂",
+  "position": "高级前端工程师",
+  "startDate": "2023-01",
+  "endDate": "2024-12",
+  "current": false,
+  "summary": "负责核心产品前端架构设计，主导技术选型与落地。这是一个完整的经历叙述，AI 会根据 JD 从中提炼亮点。",
+  "technologies": ["Go", "gRPC", "PostgreSQL"],
+  "highlights": [],
+  "notes": "Greenfield project, led 3-person team"
+}
+ENDJSON
 
-jadeai experience create --type work --data '{"company":"StartupX","position":"Intern","startDate":"2022-06","endDate":"2022-12","description":"Frontend development...","technologies":["React","TypeScript"],"notes":"Internship — focus on ownership stories"}'
+# Step 2: Create via @file.json (always use @file for Chinese/multiline content)
+jadeai experience create --type work --data @./exp-work-1.json
 
-jadeai experience create --type project --data @./oss-project.json
+# Project experiences work the same way
+cat > exp-project-1.json << 'ENDJSON'
+{
+  "name": "开源项目 X",
+  "url": "https://github.com/user/project",
+  "startDate": "2024-03",
+  "endDate": "2024-08",
+  "summary": "一个实时分析仪表盘项目。完整描述项目的背景、架构、个人贡献和成果。",
+  "technologies": ["Python", "FastAPI", "PostgreSQL"],
+  "highlights": [],
+  "notes": "Built over weekends; the streaming architecture is worth highlighting"
+}
+ENDJSON
+
+jadeai experience create --type project --data @./exp-project-1.json
 
 # List to get IDs
 jadeai experience list --json
 
-# Create resume from library entries (selected in web UI or via --experience-ids)
+# Create resume from library entries
 jadeai resume create --title "Targeted Resume" --profile amadeus
 
 # Export

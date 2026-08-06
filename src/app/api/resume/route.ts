@@ -79,8 +79,10 @@ export async function POST(request: NextRequest) {
     }
 
     function stripNotes(item: Record<string, unknown>): Record<string, unknown> {
-      const { notes, ...rest } = item;
-      return rest;
+      const { notes, summary, description, ...rest } = item;
+      // Map library summary → resume section description field
+      const resolvedDescription = summary || description;
+      return { ...rest, description: resolvedDescription };
     }
     function stripIds(items: Record<string, unknown>[]): Record<string, unknown>[] {
       return items.map((item) => {

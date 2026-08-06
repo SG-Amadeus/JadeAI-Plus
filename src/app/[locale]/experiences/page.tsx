@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useRouter } from '@/i18n/routing';
+import { useFingerprint } from '@/hooks/use-fingerprint';
 import { useExperiences } from '@/hooks/use-experiences';
 import { ExperienceList, DEFAULT_WORK_DATA, DEFAULT_INTERNSHIP_DATA, DEFAULT_PROJECT_DATA } from '@/components/experiences/experience-list';
 
@@ -14,6 +15,7 @@ export default function ExperiencesPage() {
   const t = useTranslations('experiences');
   const ct = useTranslations('common');
   const router = useRouter();
+  const { isLoading: fpLoading } = useFingerprint();
   const {
     experiences,
     isLoading,
@@ -26,8 +28,8 @@ export default function ExperiencesPage() {
   } = useExperiences();
 
   useEffect(() => {
-    fetchExperiences();
-  }, [fetchExperiences]);
+    if (!fpLoading) fetchExperiences();
+  }, [fetchExperiences, fpLoading]);
 
   const handleAdd = useCallback(async (type: 'work' | 'project' | 'internship') => {
     const data = type === 'project' ? { ...DEFAULT_PROJECT_DATA } : { ...DEFAULT_WORK_DATA };
@@ -66,6 +68,7 @@ export default function ExperiencesPage() {
                 <Button
                   size="lg"
                   className="cursor-pointer gap-2 bg-brand hover:bg-brand-hover sm:self-end"
+                  suppressHydrationWarning
                 >
                   <Library className="h-5 w-5" />
                   {t('add')}
@@ -101,7 +104,7 @@ export default function ExperiencesPage() {
 
       {/* Content */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        {isLoading ? (
+        {(isLoading || fpLoading) ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-24 w-full rounded-xl" />
