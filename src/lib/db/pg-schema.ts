@@ -3,7 +3,7 @@
  * Used ONLY by drizzle-kit for PG migration generation.
  * Runtime code still imports table objects from schema.ts.
  */
-import { pgTable, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 const epochNow = sql`extract(epoch from now())::integer`;
@@ -33,6 +33,28 @@ export const authAccounts = pgTable('auth_accounts', {
   createdAt: integer('created_at').notNull().default(epochNow),
 });
 
+export const personalProfiles = pgTable('personal_profiles', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull(),
+  codename: text('codename').notNull(),
+  data: text('data').notNull().default('{}'),
+  createdAt: integer('created_at').notNull().default(epochNow),
+  updatedAt: integer('updated_at').notNull().default(epochNow),
+}, (table) => [
+  uniqueIndex('profile_codename_user_idx').on(table.userId, table.codename),
+]);
+
+export const experiences = pgTable('experiences', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull(),
+  type: text('type').notNull(),
+  data: text('data').notNull().default('{}'),
+  createdAt: integer('created_at').notNull().default(epochNow),
+  updatedAt: integer('updated_at').notNull().default(epochNow),
+}, (table) => [
+  index('experience_user_idx').on(table.userId),
+]);
+
 export const resumes = pgTable('resumes', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull(),
@@ -47,6 +69,8 @@ export const resumes = pgTable('resumes', {
   viewCount: integer('view_count').notNull().default(0),
   parentId: text('parent_id'),
   derivedAt: integer('derived_at'),
+  profileId: text('profile_id'),
+  profileCodename: text('profile_codename'),
   createdAt: integer('created_at').notNull().default(epochNow),
   updatedAt: integer('updated_at').notNull().default(epochNow),
 });

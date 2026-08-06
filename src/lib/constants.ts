@@ -59,5 +59,13 @@ export const TWO_COLUMN_TEMPLATES: Record<string, { bg: string; width: string }>
   coder:        { bg: '#0d1117', width: '32%' },
 };
 
+/** Section types included in JSON export (experiences only, no personal_info) */
+export const EXPORT_SECTION_TYPES: ReadonlySet<string> = new Set([
+  'work_experience',
+  'education',
+  'projects',
+  'skills',
+]);
+
 export const AUTOSAVE_DELAY = 500;
 export const MAX_UNDO_STACK = 50;

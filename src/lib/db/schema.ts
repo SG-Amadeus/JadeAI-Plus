@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, uniqueIndex, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
@@ -26,6 +26,32 @@ export const authAccounts = sqliteTable('auth_accounts', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
+export const personalProfiles = sqliteTable('personal_profiles', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  codename: text('codename').notNull(),
+  data: text('data', { mode: 'json' }).notNull().default('{}'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  uniqueIndex('profile_codename_user_idx').on(table.userId, table.codename),
+]);
+
+export type PersonalProfile = typeof personalProfiles.$inferSelect;
+
+export const experiences = sqliteTable('experiences', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type', { enum: ['work', 'project', 'internship'] }).notNull(),
+  data: text('data', { mode: 'json' }).notNull().default('{}'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  index('experience_user_idx').on(table.userId),
+]);
+
+export type Experience = typeof experiences.$inferSelect;
+
 export const resumes = sqliteTable('resumes', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().references(() => users.id),
@@ -40,6 +66,8 @@ export const resumes = sqliteTable('resumes', {
   viewCount: integer('view_count').notNull().default(0),
   parentId: text('parent_id'),
   derivedAt: integer('derived_at', { mode: 'timestamp' }),
+  profileId: text('profile_id').references(() => personalProfiles.id, { onDelete: 'set null' }),
+  profileCodename: text('profile_codename'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });

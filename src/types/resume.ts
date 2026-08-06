@@ -188,6 +188,8 @@ export interface Resume {
   language: string;
   parentId?: string | null;
   derivedAt?: Date | null;
+  profileId?: string | null;
+  profileCodename?: string | null;
   sections: ResumeSection[];
   createdAt: Date;
   updatedAt: Date;
