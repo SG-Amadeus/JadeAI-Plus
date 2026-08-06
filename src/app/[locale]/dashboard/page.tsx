@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, LayoutGrid, List, Sparkles, Upload, Camera } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Sparkles, Upload, Camera, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -150,6 +150,14 @@ export default function DashboardPage() {
           >
             <Camera className="h-4 w-4" />
             <span className="hidden sm:inline">{t('linkedinPhoto')}</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/profiles')}
+            className="cursor-pointer gap-2"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('profiles')}</span>
           </Button>
           <Button
             data-tour="dash-ai-generate"

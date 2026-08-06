@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Shield, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TemplateThumbnail } from '@/components/dashboard/template-thumbnail';
@@ -51,7 +51,17 @@ export function HeroSection() {
             asChild
             className="h-12 w-full cursor-pointer rounded-xl bg-brand px-8 text-base font-semibold text-white shadow-lg shadow-brand/25 transition-all hover:-translate-y-0.5 hover:bg-brand-hover hover:shadow-xl hover:shadow-brand/30 sm:h-11 sm:w-auto sm:px-6 sm:text-sm"
           >
-            <Link href="/dashboard">{t('cta')}</Link>
+            <Link href="/profiles">{t('cta')}</Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 w-full cursor-pointer rounded-xl border-zinc-300 px-8 text-base font-semibold transition-all hover:-translate-y-0.5 dark:border-zinc-700 sm:h-11 sm:w-auto sm:px-6 sm:text-sm"
+          >
+            <Link href="/experiences">
+              <Library className="mr-1.5 h-4 w-4" />
+              {t('experiencesCta')}
+            </Link>
           </Button>
           <Button
             asChild
@@ -60,6 +70,14 @@ export function HeroSection() {
           >
             <Link href="/templates">{t('secondaryCta')}</Link>
           </Button>
+        </div>
+
+        {/* Privacy notice */}
+        <div className="mx-auto mt-6 flex max-w-xl items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left dark:border-green-800 dark:bg-green-950/30">
+          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+          <p className="text-sm text-green-800 dark:text-green-200">
+            {t('privacyNote')}
+          </p>
         </div>
 
         {/* Floating template cards */}

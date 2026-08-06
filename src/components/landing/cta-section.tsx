@@ -27,7 +27,7 @@ export function CTASection() {
               asChild
               className="mt-10 h-12 cursor-pointer rounded-xl bg-white px-8 text-base font-semibold text-brand shadow-lg transition-all hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-xl sm:h-11 sm:px-6 sm:text-sm"
             >
-              <Link href="/dashboard">{t('button')}</Link>
+              <Link href="/profiles">{t('button')}</Link>
             </Button>
           </div>
         </div>
