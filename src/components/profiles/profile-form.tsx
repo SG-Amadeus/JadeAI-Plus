@@ -2,10 +2,13 @@
 
 import { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { ProfileEducationItem } from '@/types/profile';
+import { generateId } from '@/lib/utils';
 
 function resizeImage(file: File, maxSize: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -82,6 +85,9 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
   const [codename, setCodename] = useState(initial?.codename || '');
   const [formData, setFormData] = useState<Record<string, unknown>>(initial?.data || {});
   const [avatar, setAvatar] = useState<string>(initial?.data?.avatar as string || '');
+  const [education, setEducation] = useState<ProfileEducationItem[]>(
+    Array.isArray(initial?.data?.education) ? initial.data.education as ProfileEducationItem[] : []
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,6 +95,7 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
     if (!codename.trim()) return;
     const data = { ...formData };
     if (avatar) data.avatar = avatar;
+    data.education = education;
     onSubmit({ codename: codename.trim().toLowerCase().replace(/\s+/g, '-'), data });
   };
 
@@ -191,6 +198,86 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
             </div>
           );
         })}
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-base">{t('educationHistory')}</Label>
+          <button
+            type="button"
+            className="flex items-center gap-1 text-xs text-brand hover:text-brand-hover"
+            onClick={() => setEducation((prev) => [...prev, { id: generateId(), institution: '', degree: '', field: '', startDate: '', endDate: '' }])}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {tf('addItem')}
+          </button>
+        </div>
+        {education.map((item, idx) => (
+          <div key={item.id} className="rounded-lg border border-zinc-200 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-500">#{idx + 1}</span>
+              <button
+                type="button"
+                className="text-zinc-400 hover:text-red-500"
+                onClick={() => setEducation((prev) => prev.filter((e) => e.id !== item.id))}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor={`edu-${item.id}-institution`}>{tf('institution')}</Label>
+                <Input
+                  id={`edu-${item.id}-institution`}
+                  value={item.institution}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, institution: e.target.value } : ed))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`edu-${item.id}-degree`}>{tf('degree')}</Label>
+                <Input
+                  id={`edu-${item.id}-degree`}
+                  value={item.degree}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, degree: e.target.value } : ed))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`edu-${item.id}-field`}>{tf('field')}</Label>
+                <Input
+                  id={`edu-${item.id}-field`}
+                  value={item.field}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, field: e.target.value } : ed))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`edu-${item.id}-gpa`}>{tf('gpa')}</Label>
+                <Input
+                  id={`edu-${item.id}-gpa`}
+                  value={item.gpa || ''}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, gpa: e.target.value } : ed))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`edu-${item.id}-start`}>{tf('startDate')}</Label>
+                <Input
+                  id={`edu-${item.id}-start`}
+                  type="month"
+                  value={item.startDate}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, startDate: e.target.value } : ed))}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`edu-${item.id}-end`}>{tf('endDate')}</Label>
+                <Input
+                  id={`edu-${item.id}-end`}
+                  type="month"
+                  value={item.endDate}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, endDate: e.target.value } : ed))}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="flex justify-end">

@@ -1,4 +1,6 @@
-import type { PersonalInfoContent } from '@/types/resume';
+import type { EducationContent, PersonalInfoContent } from '@/types/resume';
+import type { ProfileEducationItem } from '@/types/profile';
+import { generateId } from '@/lib/utils';
 
 export function buildPersonalInfoContent(profileData: Record<string, unknown>): PersonalInfoContent {
   return {
@@ -21,5 +23,41 @@ export function buildPersonalInfoContent(profileData: Record<string, unknown>): 
     github: profileData.github != null ? String(profileData.github) : undefined,
     customLinks: Array.isArray(profileData.customLinks) ? profileData.customLinks : undefined,
     avatar: profileData.avatar != null ? String(profileData.avatar) : undefined,
+  };
+}
+
+export function buildEducationContent(profileData: Record<string, unknown>): EducationContent {
+  const raw = profileData.education;
+  if (!Array.isArray(raw)) return { items: [] };
+
+  const items = raw
+    .filter((entry): entry is Record<string, unknown> => entry != null && typeof entry === 'object')
+    .map((entry) => {
+      const item: ProfileEducationItem = {
+        id: generateId(),
+        institution: String(entry.institution ?? ''),
+        degree: String(entry.degree ?? ''),
+        field: String(entry.field ?? ''),
+        startDate: String(entry.startDate ?? ''),
+        endDate: String(entry.endDate ?? ''),
+      };
+      if (entry.location) item.location = String(entry.location);
+      if (entry.gpa != null) item.gpa = String(entry.gpa);
+      return item;
+    })
+    .filter((item) => item.institution || item.degree || item.field);
+
+  return {
+    items: items.map(({ id, institution, degree, field, location, startDate, endDate, gpa }) => ({
+      id,
+      institution,
+      degree,
+      field,
+      location,
+      startDate,
+      endDate,
+      gpa,
+      highlights: [],
+    })),
   };
 }

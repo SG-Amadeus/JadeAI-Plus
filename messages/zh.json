@@ -157,7 +157,8 @@
     "securityBadge": "AI 无法读取你的个人信息",
     "createResumeWith": "用此档案创建简历",
     "browseTemplates": "浏览模板",
-    "goToDashboard": "进入工作台"
+    "goToDashboard": "进入工作台",
+    "educationHistory": "教育经历"
   },
   "experiences": {
     "nav": "经历库",

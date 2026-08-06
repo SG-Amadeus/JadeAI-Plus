@@ -157,7 +157,8 @@
     "securityBadge": "AI cannot read your personal information",
     "createResumeWith": "Create Resume with This Profile",
     "browseTemplates": "Browse Templates",
-    "goToDashboard": "Go to Dashboard"
+    "goToDashboard": "Go to Dashboard",
+    "educationHistory": "Education History"
   },
   "experiences": {
     "nav": "Experience Library",

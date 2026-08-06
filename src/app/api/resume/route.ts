@@ -4,7 +4,7 @@ import { profileRepository } from '@/lib/db/repositories/profile.repository';
 import { experienceRepository } from '@/lib/db/repositories/experience.repository';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { DEFAULT_SECTIONS } from '@/lib/constants';
-import { buildPersonalInfoContent } from '@/lib/profile/prefill';
+import { buildEducationContent, buildPersonalInfoContent } from '@/lib/profile/prefill';
 import { resumes } from '@/lib/db/schema';
 import { db } from '@/lib/db';
 import { eq } from 'drizzle-orm';
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     if (resume) {
       if (Array.isArray(sections) && sections.length > 0) {
         // Import mode: use provided sections
-        // If profile is bound, personal_info comes from the profile — skip any in the import
+        // If profile is bound, personal_info and education come from the profile — skip them in the import
         let sortOrder = 0;
         if (profileId && resolvedProfileData) {
           const piLabel = resume.language === 'en' ? 'Personal Info' : '个人信息';
@@ -105,9 +105,17 @@ export async function POST(request: NextRequest) {
             sortOrder: sortOrder++,
             content: buildPersonalInfoContent(resolvedProfileData),
           });
+          const eduLabel = resume.language === 'en' ? 'Education' : '教育背景';
+          await resumeRepository.createSection({
+            resumeId: resume.id,
+            type: 'education',
+            title: eduLabel,
+            sortOrder: sortOrder++,
+            content: buildEducationContent(resolvedProfileData),
+          });
         }
         for (const s of sections) {
-          if (profileId && s.type === 'personal_info') continue; // profile provides this
+          if (profileId && (s.type === 'personal_info' || s.type === 'education')) continue; // profile provides these
           await resumeRepository.createSection({
             resumeId: resume.id,
             type: s.type,
@@ -135,7 +143,11 @@ export async function POST(request: NextRequest) {
             content = { items: workEntries.length > 0 ? stripIds(workEntries.map(stripNotes)) : [] };
           } else if (s.type === 'projects') {
             content = { items: projectEntries.length > 0 ? stripIds(projectEntries.map(stripNotes)) : [] };
-          } else if (s.type === 'education' || s.type === 'certifications' || s.type === 'languages' || s.type === 'github' || s.type === 'custom') {
+          } else if (s.type === 'education') {
+            content = resolvedProfileData
+              ? buildEducationContent(resolvedProfileData)
+              : { items: [] };
+          } else if (s.type === 'certifications' || s.type === 'languages' || s.type === 'github' || s.type === 'custom') {
             content = { items: [] };
           } else if (s.type === 'skills') {
             content = { categories: [] };
