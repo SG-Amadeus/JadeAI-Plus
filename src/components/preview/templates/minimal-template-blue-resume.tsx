@@ -15,7 +15,7 @@ import { isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { QrCodesPreview } from '../qr-codes-preview';
 
-const BLUE = '#073b82';
+const BLUE = '#1F4E79';
 
 export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((section) => section.type === 'personal_info');
@@ -41,23 +41,23 @@ export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
 
   return (
     <div
-      className="mx-auto min-h-[297mm] w-full max-w-[210mm] bg-white px-[8mm] pb-[8mm] pt-[4mm] text-[11px] leading-[1.45] text-[#111827] shadow-lg print:shadow-none"
-      style={{ fontFamily: "'Microsoft YaHei', 'PingFang SC', 'SimSun', sans-serif" }}
+      className="mx-auto min-h-[297mm] w-full max-w-[210mm] bg-white px-[15mm] py-[12mm] text-[10px] leading-[1.45] text-[#111827] shadow-lg print:shadow-none"
+      style={{ fontFamily: "'Arial', 'Microsoft YaHei', sans-serif" }}
     >
       <header className="relative">
         <div className="min-h-[24px] pr-[100px] text-center">
-          <h1 className="text-[20px] font-bold leading-none tracking-[0.08em]" style={{ color: BLUE }}>
+          <h1 className="text-[24px] font-bold leading-none tracking-[0.08em]" style={{ color: BLUE }}>
             {pi.fullName || (zh ? '姓名' : 'Your Name')}
           </h1>
           {pi.jobTitle && (
-            <p className="mt-1 text-[10px] font-medium" style={{ color: BLUE }}>
+            <p className="mt-1 text-[11px] font-medium" style={{ color: BLUE }}>
               {pi.jobTitle}
             </p>
           )}
         </div>
 
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_68px] gap-x-5">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[11px]">
             {personalItems.map((item) => (
               <div key={`${item.label}-${String(item.value)}`} className="flex min-w-0 items-baseline">
                 <span className="mr-1 shrink-0 font-bold" style={{ color: BLUE }}>
@@ -101,12 +101,11 @@ export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
 
 function SectionTitle({ title }: { title: string }) {
   return (
-    <div className="mb-2 mt-3 flex items-center gap-3">
-      <div className="flex-1 border-t-2 border-dotted" style={{ borderColor: BLUE }} />
-      <h2 className="shrink-0 text-[12px] font-bold" style={{ color: BLUE }}>
+    <div className="mb-2 mt-3">
+      <h2 className="text-[14px] font-bold" style={{ color: BLUE }}>
         {title}
       </h2>
-      <div className="flex-1 border-t-2 border-dotted" style={{ borderColor: BLUE }} />
+      <div className="mt-0.5 h-[2px] w-full" style={{ backgroundColor: BLUE }} />
     </div>
   );
 }
@@ -121,12 +120,12 @@ function EntryHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 items-center text-[10.5px] font-semibold leading-5" style={{ color: BLUE }}>
+    <div className="flex min-w-0 items-center text-[12px] font-bold leading-5" style={{ color: BLUE }}>
       {left && <span className="max-w-[38%] shrink-0 truncate">{left}</span>}
-      {(left || middle) && <span className="mx-2 h-px min-w-5 flex-1 bg-[#073b82]" />}
+      {(left || middle) && <span className="mx-2 h-px min-w-5 flex-1 bg-[#1F4E79]" />}
       {middle && <span className="max-w-[34%] shrink-0 truncate">{middle}</span>}
-      {middle && right && <span className="mx-2 h-px min-w-5 flex-1 bg-[#073b82]" />}
-      {right && <span className="shrink-0 whitespace-nowrap text-[10px] tracking-wide">{right}</span>}
+      {middle && right && <span className="mx-2 h-px min-w-5 flex-1 bg-[#1F4E79]" />}
+      {right && <span className="shrink-0 whitespace-nowrap text-[11px]">{right}</span>}
     </div>
   );
 }
@@ -160,7 +159,7 @@ function HighlightList({ items }: { items?: string[] }) {
   return (
     <ul className="mt-1 space-y-0.5">
       {items.map((highlight, index) => (
-        <li key={index} className="grid grid-cols-[9px_1fr] text-[10.5px] leading-[1.55] text-[#20242c]">
+        <li key={index} className="grid grid-cols-[9px_1fr] text-[11px] leading-[1.45] text-[#20242c]">
           <span className="font-bold" style={{ color: BLUE }}>
             •
           </span>
@@ -179,7 +178,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
     return (
       <RichText
         html={(content as SummaryContent).text}
-        className="text-[10.5px] leading-[1.65] text-[#20242c]"
+        className="text-[11px] leading-[1.45] text-[#20242c]"
       />
     );
   }
@@ -194,9 +193,9 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
               middle={item.company ? item.position : undefined}
               right={<DateRange item={item} lang={lang} />}
             />
-            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+            <RichText html={item.description} className="mt-1 text-[11px] leading-[1.45] text-[#20242c]" />
             {item.technologies?.length > 0 && (
-              <p className="mt-1 text-[10px] text-[#374151]">
+              <p className="mt-1 text-[10.5px] text-[#374151]">
                 <span className="font-semibold" style={{ color: BLUE }}>
                   {lang === 'zh' ? '项目：' : 'Project: '}
                 </span>
@@ -215,19 +214,19 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
       <div className="space-y-3">
         {(content.items || []).map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
-            <div className="flex items-center text-[11px] font-semibold leading-5" style={{ color: BLUE }}>
+            <div className="flex items-center text-[12px] font-bold leading-5" style={{ color: BLUE }}>
               <span className="shrink-0">{item.degree}</span>
-              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#1F4E79]" />
               <span className="shrink-0">{item.institution}</span>
-              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#1F4E79]" />
               <span className="shrink-0">{item.field}</span>
-              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#1F4E79]" />
               <span className="shrink-0 whitespace-nowrap">
                 <DateRange item={item} lang={lang} />
               </span>
             </div>
             {(item.gpa || item.description) && (
-              <p className="mt-1 text-[11px] leading-[1.55] text-[#20242c]">
+              <p className="mt-1 text-[10.5px] leading-[1.45] text-[#20242c]">
                 {item.gpa && (
                   <>
                     <span className="font-semibold" style={{ color: BLUE }}>
@@ -251,7 +250,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
     return (
       <div className="space-y-1">
         {(content.categories || []).map((category: any) => (
-          <p key={category.id} className="text-[10.5px] leading-[1.55] text-[#20242c]">
+          <p key={category.id} className="text-[11px] leading-[1.45] text-[#20242c]">
             {category.name && (
               <span className="font-semibold" style={{ color: BLUE }}>
                 {category.name}：
@@ -277,9 +276,9 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
                 middle={projectRole}
                 right={<DateRange item={item} lang={lang} />}
               />
-              <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+              <RichText html={item.description} className="mt-1 text-[11px] leading-[1.45] text-[#20242c]" />
               {item.technologies?.length > 0 && (
-                <p className="mt-1 text-[10px] text-[#374151]">
+                <p className="mt-1 text-[10.5px] text-[#374151]">
                   <span className="font-semibold" style={{ color: BLUE }}>
                     {lang === 'zh' ? '项目：' : 'Project: '}
                   </span>
@@ -305,7 +304,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
               middle={item.language}
               right={item.stars != null ? `★ ${item.stars.toLocaleString()}` : undefined}
             />
-            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+            <RichText html={item.description} className="mt-1 text-[11px] leading-[1.45] text-[#20242c]" />
           </article>
         ))}
       </div>
@@ -328,7 +327,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
   if (section.type === 'languages') {
     const items = (content as LanguagesContent).items || [];
     return (
-      <div className="flex flex-wrap gap-x-8 gap-y-1 text-[10.5px]">
+      <div className="flex flex-wrap gap-x-8 gap-y-1 text-[11px]">
         {items.map((item: any) => (
           <span key={item.id}>
             <span className="font-semibold" style={{ color: BLUE }}>
@@ -348,7 +347,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
         {items.map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
             <EntryHeader left={item.title} middle={item.subtitle} right={item.date} />
-            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+            <RichText html={item.description} className="mt-1 text-[11px] leading-[1.45] text-[#20242c]" />
           </article>
         ))}
       </div>
@@ -365,7 +364,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
         {content.items.map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
             <EntryHeader left={item.name || item.title || item.language} right={item.date} />
-            <RichText html={item.description} className="mt-1 text-[10.5px] leading-[1.6] text-[#20242c]" />
+            <RichText html={item.description} className="mt-1 text-[11px] leading-[1.45] text-[#20242c]" />
           </article>
         ))}
       </div>

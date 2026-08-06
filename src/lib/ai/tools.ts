@@ -11,7 +11,8 @@ export function createExecutableTools(resumeId: string, aiConfig: AIConfig) {
   return {
     updateSection: tool({
       description: `Update the content of a specific resume section. Section content structures:
-- personal_info: { fullName, jobTitle, email, phone, location, website, linkedin, github }
+- personal_info: { jobTitle, location } — name/email/phone are managed through your profile and are NEVER visible or editable
+- summary: { text: string }
 - summary: { text: string }
 - work_experience: { items: [{ id, company, position, location, startDate, endDate, current, description, highlights }] }
 - education: { items: [{ id, institution, degree, field, location, startDate, endDate, gpa, highlights }] }
@@ -130,24 +131,40 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
           }));
         }
 
+        // Block AI from modifying PII fields on personal_info (name, email, phone, wechat)
+        const PII_FIELDS = new Set(['fullName', 'email', 'phone', 'wechat']);
+        if (section.type === 'personal_info' && PII_FIELDS.has(actualField)) {
+          return { success: false, error: `Cannot modify personal contact fields. ${actualField} is managed through your profile, not via AI.` };
+        }
+
         const merged = { ...(section.content as Record<string, unknown>), [actualField]: parsedValue };
         // Coerce inner list fields (highlights/technologies/skills) to arrays so a
         // string written by the model can't crash the renderer (issue #87).
         const updatedContent = normalizeSectionContent(section.type, merged);
         await resumeRepository.updateSection(sectionId, { content: updatedContent });
 
-        return { success: true, sectionType: section.type, field: actualField, updatedContent };
+        // Never return PII to the model — sanitize personal_info content before sending back
+        const safeContent = section.type === 'personal_info'
+          ? stripPersonalInfoForAI(updatedContent).content
+          : updatedContent;
+
+        return { success: true, sectionType: section.type, field: actualField, updatedContent: safeContent };
       },
     }),
 
     addSection: tool({
       description: 'Add a new section to the resume. Use this when the user wants to add a new section type.',
       inputSchema: z.object({
-        type: z.string().describe('The type of section to add (e.g., "work_experience", "education", "skills", "projects", "certifications", "languages", "custom")'),
+        type: z.string().describe('The type of section to add ("work_experience", "education", "skills", "projects", "certifications", "languages", "custom"). personal_info is managed by profile and cannot be added.'),
         title: z.string().describe('The display title for the section'),
         content: z.string().optional().describe('Initial content as a JSON string. Defaults to empty structure.'),
       }),
       execute: async ({ type, title, content }) => {
+        // Block AI from creating personal_info sections (managed by profile)
+        if (type === 'personal_info') {
+          return { success: false, error: 'personal_info sections are managed through your profile and cannot be created via AI.' };
+        }
+
         const resume = await resumeRepository.findById(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
@@ -189,6 +206,12 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
 
         const section = resume.sections.find((s: any) => s.id === sectionId);
         if (!section) return { success: false, error: 'Section not found' };
+
+        // Block AI from rewriting PII fields on personal_info
+        const PII_FIELDS = new Set(['fullName', 'email', 'phone', 'wechat']);
+        if (section.type === 'personal_info' && PII_FIELDS.has(field)) {
+          return { success: false, error: `Cannot rewrite personal contact fields. ${field} is managed through your profile, not via AI.` };
+        }
 
         const merged = { ...(section.content as Record<string, unknown>), [field]: improvedText };
         const updatedContent = normalizeSectionContent(section.type, merged);
