@@ -220,12 +220,18 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
               middle={degreeField(item.degree, item.field)}
               right={<DateRange item={item} lang={lang} />}
             />
-            {item.gpa && (
-              <p className="mt-1 text-[10px] text-[#20242c]">
-                <span className="font-semibold" style={{ color: BLUE }}>
-                  GPA：
-                </span>
-                {item.gpa}
+            {(item.gpa || item.description) && (
+              <p className="mt-1 text-[10px] leading-[1.55] text-[#20242c]">
+                {item.gpa && (
+                  <>
+                    <span className="font-semibold" style={{ color: BLUE }}>
+                      GPA：
+                    </span>
+                    {item.gpa}
+                  </>
+                )}
+                {item.gpa && item.description && <span className="mx-2 text-[#9ca3af]">|</span>}
+                {item.description && <span>{item.description}</span>}
               </p>
             )}
             <HighlightList items={item.highlights} />

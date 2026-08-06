@@ -58,9 +58,8 @@ export function buildEducationContent(profileData: Record<string, unknown>): Edu
       startDate,
       endDate,
       gpa,
-      highlights: description
-        ? description.split('\n').map((s) => s.trim()).filter(Boolean)
-        : [],
+      ...(description ? { description } : {}),
+      highlights: [],
     })),
   };
 }

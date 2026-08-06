@@ -6,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { ProfileEducationItem } from '@/types/profile';
 import { generateId } from '@/lib/utils';
@@ -251,20 +252,11 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
               </div>
               <div>
                 <Label htmlFor={`edu-${item.id}-gpa`}>{tf('gpa')}</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id={`edu-${item.id}-gpa`}
-                    value={item.gpa || ''}
-                    className="w-20 shrink-0"
-                    onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, gpa: e.target.value } : ed))}
-                  />
-                  <Input
-                    id={`edu-${item.id}-desc`}
-                    value={item.description || ''}
-                    placeholder={t('educationDescriptionHint')}
-                    onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, description: e.target.value } : ed))}
-                  />
-                </div>
+                <Input
+                  id={`edu-${item.id}-gpa`}
+                  value={item.gpa || ''}
+                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, gpa: e.target.value } : ed))}
+                />
               </div>
               <div>
                 <Label htmlFor={`edu-${item.id}-start`}>{tf('startDate')}</Label>
@@ -284,6 +276,16 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
                   onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, endDate: e.target.value } : ed))}
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor={`edu-${item.id}-desc`}>{tf('description')}</Label>
+              <Textarea
+                id={`edu-${item.id}-desc`}
+                rows={3}
+                value={item.description || ''}
+                placeholder={t('educationDescriptionHint')}
+                onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, description: e.target.value } : ed))}
+              />
             </div>
           </div>
         ))}

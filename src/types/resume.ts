@@ -60,6 +60,7 @@ export interface EducationItem {
   startDate: string;
   endDate: string;
   gpa?: string;
+  description?: string;
   highlights: string[];
 }
 
