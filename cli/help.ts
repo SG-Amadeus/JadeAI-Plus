@@ -53,6 +53,14 @@ export const HELP_PROFILE = [
   cmd('profile list', 'List profile codenames (PI managed in web UI only)'),
 ].join('\n');
 
+export const HELP_EXPERIENCE = [
+  cmd('experience list', 'List all experiences (--type work|project|internship)'),
+  cmd('experience show', 'Get a single experience by id'),
+  cmd('experience create', 'Create an experience (--type, --data <json|@file>)'),
+  cmd('experience update', 'Update an experience (--type, --data)'),
+  cmd('experience delete', 'Delete an experience (--force)'),
+].join('\n');
+
 export const HELP_IMPORT = [
   cmd('pull', 'Export resume sections to local JSON files'),
   cmd('push', 'Sync local JSON changes back to server'),
@@ -66,7 +74,7 @@ export const HELP_ITEM = [
 ].join('\n');
 
 export function getTopHelp(): string {
-  return [HELP_TOP, '', hdr('Infra'), HELP_PING, HELP_START, '', hdr('Template'), HELP_TEMPLATE, '', hdr('Profile'), HELP_PROFILE, '', hdr('Import/Export'), HELP_IMPORT, '', hdr('Resume'), HELP_RESUME, '', hdr('Section'), HELP_SECTION, '', hdr('Item'), HELP_ITEM, '', `Run 'jadeai <command> --help' for detailed usage.`].join('\n');
+  return [HELP_TOP, '', hdr('Infra'), HELP_PING, HELP_START, '', hdr('Template'), HELP_TEMPLATE, '', hdr('Profile'), HELP_PROFILE, '', hdr('Experience'), HELP_EXPERIENCE, '', hdr('Import/Export'), HELP_IMPORT, '', hdr('Resume'), HELP_RESUME, '', hdr('Section'), HELP_SECTION, '', hdr('Item'), HELP_ITEM, '', `Run 'jadeai <command> --help' for detailed usage.`].join('\n');
 }
 
 // ── Per-command help strings ──
@@ -173,6 +181,66 @@ Options:
 Returns codenames and IDs only. Personal profile DATA (fullName, email, phone, etc.)
 is managed exclusively through the web UI. No CLI commands exist to read or write
 profile data — this is a security boundary for AI agents.`,
+
+  'experience list': `List experience library entries.
+
+Usage: jadeai experience list [options]
+
+Options:
+  --type work|project|internship   Filter by type (optional)
+  --json                           Machine-readable output
+
+Returns all experience entries for the authenticated user. Each entry includes
+id, type, data, and timestamps. The data field contains type-specific fields
+(company/position for work/internship, name/url for projects).`,
+
+  'experience show': `Show a single experience entry.
+
+Usage: jadeai experience show <id>
+
+Options:
+  --json   Machine-readable output
+
+Returns the full experience entry including all data fields and internal notes.`,
+
+  'experience create': `Create a new experience entry.
+
+Usage: jadeai experience create --type <type> --data <json|@file>
+
+Options:
+  --type work|project|internship   Experience type (required)
+  --data <json>                    Inline JSON data (required)
+  --data @path/to/file.json        Read data from file
+  --json                           Machine-readable output
+
+Examples:
+  jadeai experience create --type work --data '{"company":"Acme","position":"Engineer"}'
+  jadeai experience create --type project --data @./project.json`,
+
+  'experience update': `Update an experience entry (partial merge).
+
+Usage: jadeai experience update <id> [options]
+
+Options:
+  --type work|project|internship   Change experience type
+  --data <json|@file>              Merge new fields into data (partial update)
+  --json                           Machine-readable output
+
+At least one of --type or --data is required. The --data is merged into the
+existing data, so you only need to send the fields you want to change.
+
+Example:
+  jadeai experience update abc123 --data '{"description":"Updated description"}'`,
+
+  'experience delete': `Delete an experience entry.
+
+Usage: jadeai experience delete <id> --force
+
+Options:
+  --force   Required confirmation flag
+  --json    Machine-readable output
+
+The --force flag is required to prevent accidental deletion.`,
 
   'section reorder': `Reorder sections of a resume.
 

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { experienceRepository } from '@/lib/db/repositories/experience.repository';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
-import { requireUiClient } from '@/lib/auth/ui-only';
+
+// No requireUiClient guard — experience data is non-PII and safe for AI/CLI access.
 
 export async function GET(request: NextRequest) {
   try {
-    const uiCheck = requireUiClient(request);
-    if (!uiCheck.ok) return uiCheck.response!;
-
     const fingerprint = getUserIdFromRequest(request);
     const user = await resolveUser(fingerprint);
     if (!user) {
@@ -24,9 +22,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const uiCheck = requireUiClient(request);
-    if (!uiCheck.ok) return uiCheck.response!;
-
     const fingerprint = getUserIdFromRequest(request);
     const user = await resolveUser(fingerprint);
     if (!user) {

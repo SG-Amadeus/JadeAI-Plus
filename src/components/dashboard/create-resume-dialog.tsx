@@ -65,7 +65,7 @@ function useExperienceRefs(open: boolean) {
   useEffect(() => {
     if (!open) return;
     const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('jade_fingerprint') : null;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-profile-ui': '1' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (fingerprint) headers['x-fingerprint'] = fingerprint;
     fetch('/api/experience', { headers })
       .then((r) => r.ok ? r.json() : [])

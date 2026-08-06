@@ -6,7 +6,6 @@ function getHeaders() {
   const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('jade_fingerprint') : null;
   return {
     'Content-Type': 'application/json',
-    'x-profile-ui': '1',
     ...(fingerprint ? { 'x-fingerprint': fingerprint } : {}),
   };
 }

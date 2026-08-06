@@ -22,6 +22,9 @@ import { start } from './commands/start';
 import { pull } from './commands/pull';
 import { push } from './commands/push';
 import { profileList } from './commands/profile';
+import {
+  experienceList, experienceShow, experienceCreate, experienceUpdate, experienceDelete,
+} from './commands/experience';
 
 // ── Command registry (ordered by lifecycle) ──
 interface CommandDef {
@@ -36,6 +39,12 @@ const COMMANDS: CommandDef[] = [
   { path: ['template', 'list'], run: templateList },
 
   { path: ['profile', 'list'], run: profileList },
+
+  { path: ['experience', 'list'], run: experienceList },
+  { path: ['experience', 'show'], run: experienceShow },
+  { path: ['experience', 'create'], run: experienceCreate },
+  { path: ['experience', 'update'], run: experienceUpdate },
+  { path: ['experience', 'delete'], run: experienceDelete },
 
   { path: ['resume', 'create'], run: resumeCreate },
   { path: ['resume', 'derive'], run: resumeDerive },
