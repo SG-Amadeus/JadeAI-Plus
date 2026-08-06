@@ -158,7 +158,8 @@
     "createResumeWith": "用此档案创建简历",
     "browseTemplates": "浏览模板",
     "goToDashboard": "进入工作台",
-    "educationHistory": "教育经历"
+    "educationHistory": "教育经历",
+    "educationDescriptionHint": "主修课程、研究方向、学术成果、论文课题等"
   },
   "experiences": {
     "nav": "经历库",

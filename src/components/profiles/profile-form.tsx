@@ -251,11 +251,20 @@ export function ProfileForm({ initial, onSubmit, isLoading }: Props) {
               </div>
               <div>
                 <Label htmlFor={`edu-${item.id}-gpa`}>{tf('gpa')}</Label>
-                <Input
-                  id={`edu-${item.id}-gpa`}
-                  value={item.gpa || ''}
-                  onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, gpa: e.target.value } : ed))}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id={`edu-${item.id}-gpa`}
+                    value={item.gpa || ''}
+                    className="w-20 shrink-0"
+                    onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, gpa: e.target.value } : ed))}
+                  />
+                  <Input
+                    id={`edu-${item.id}-desc`}
+                    value={item.description || ''}
+                    placeholder={t('educationDescriptionHint')}
+                    onChange={(e) => setEducation((prev) => prev.map((ed) => ed.id === item.id ? { ...ed, description: e.target.value } : ed))}
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor={`edu-${item.id}-start`}>{tf('startDate')}</Label>

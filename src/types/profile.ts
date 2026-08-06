@@ -7,4 +7,5 @@ export interface ProfileEducationItem {
   startDate: string;
   endDate: string;
   gpa?: string;
+  description?: string;
 }

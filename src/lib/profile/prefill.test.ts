@@ -97,6 +97,31 @@ describe('buildEducationContent', () => {
     expect(result.items[0].location).toBeUndefined();
     expect(result.items[0].gpa).toBeUndefined();
   });
+
+  it('maps description to highlights split by newlines', () => {
+    const data = {
+      education: [
+        { institution: 'MIT', degree: 'PhD', field: 'Physics', startDate: '', endDate: '',
+          description: 'Focused on quantum computing.\nPublished 3 papers.\nTA for Advanced Algorithms.' },
+      ],
+    };
+    const result = buildEducationContent(data);
+    expect(result.items[0].highlights).toEqual([
+      'Focused on quantum computing.',
+      'Published 3 papers.',
+      'TA for Advanced Algorithms.',
+    ]);
+  });
+
+  it('empty highlights when no description', () => {
+    const data = {
+      education: [
+        { institution: 'MIT', degree: 'PhD', field: 'Physics', startDate: '', endDate: '' },
+      ],
+    };
+    const result = buildEducationContent(data);
+    expect(result.items[0].highlights).toEqual([]);
+  });
 });
 
 describe('buildPersonalInfoContent', () => {

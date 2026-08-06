@@ -158,7 +158,8 @@
     "createResumeWith": "Create Resume with This Profile",
     "browseTemplates": "Browse Templates",
     "goToDashboard": "Go to Dashboard",
-    "educationHistory": "Education History"
+    "educationHistory": "Education History",
+    "educationDescriptionHint": "Courses, research focus, academic achievements, thesis topics, etc."
   },
   "experiences": {
     "nav": "Experience Library",

@@ -43,12 +43,13 @@ export function buildEducationContent(profileData: Record<string, unknown>): Edu
       };
       if (entry.location) item.location = String(entry.location);
       if (entry.gpa != null) item.gpa = String(entry.gpa);
+      if (entry.description) item.description = String(entry.description);
       return item;
     })
     .filter((item) => item.institution || item.degree || item.field);
 
   return {
-    items: items.map(({ id, institution, degree, field, location, startDate, endDate, gpa }) => ({
+    items: items.map(({ id, institution, degree, field, location, startDate, endDate, gpa, description }) => ({
       id,
       institution,
       degree,
@@ -57,7 +58,9 @@ export function buildEducationContent(profileData: Record<string, unknown>): Edu
       startDate,
       endDate,
       gpa,
-      highlights: [],
+      highlights: description
+        ? description.split('\n').map((s) => s.trim()).filter(Boolean)
+        : [],
     })),
   };
 }
