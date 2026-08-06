@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
+import { profileRepository } from '@/lib/db/repositories/profile.repository';
+import { experienceRepository } from '@/lib/db/repositories/experience.repository';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { DEFAULT_SECTIONS } from '@/lib/constants';
+import { buildPersonalInfoContent } from '@/lib/profile/prefill';
+import { resumes } from '@/lib/db/schema';
+import { db } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,8 +17,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const resumes = await resumeRepository.findAllByUserId(user.id);
-    return NextResponse.json(resumes);
+    const allResumes = await resumeRepository.findAllByUserId(user.id);
+    return NextResponse.json(allResumes);
   } catch (error) {
     console.error('GET /api/resume error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -28,7 +34,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, template, language, sections, themeConfig } = body;
+    const { title, template, language, sections, themeConfig, profileCodename, experienceIds } = body;
+
+    let profileId: string | null = null;
+    let resolvedProfileData: Record<string, unknown> | null = null;
+
+    // Resolve profile if codename provided (non-AI route — allowed)
+    if (profileCodename && typeof profileCodename === 'string') {
+      const profile = await profileRepository.findByCodename(user.id, profileCodename);
+      if (!profile) {
+        return NextResponse.json({ error: `Unknown profile codename: ${profileCodename}` }, { status: 400 });
+      }
+      profileId = profile.id;
+      resolvedProfileData = profile.data as Record<string, unknown>;
+    }
 
     const resume = await resumeRepository.create({
       userId: user.id,
@@ -38,16 +57,60 @@ export async function POST(request: NextRequest) {
       ...(themeConfig ? { themeConfig } : {}),
     });
 
+    // Bind profile to resume (denormalized columns)
+    if (profileId) {
+      await db.update(resumes)
+        .set({ profileId, profileCodename } as any)
+        .where(eq(resumes.id, resume!.id));
+    }
+
+    // Load experience library entries if referenced
+    let workEntries: Record<string, unknown>[] = [];
+    let projectEntries: Record<string, unknown>[] = [];
+    if (Array.isArray(experienceIds) && experienceIds.length > 0) {
+      const entries = await experienceRepository.findByIds(experienceIds);
+      const userEntries = entries.filter((e) => e.userId === user.id);
+      workEntries = userEntries
+        .filter((e) => e.type === 'work' || e.type === 'internship')
+        .map((e) => e.data as Record<string, unknown>);
+      projectEntries = userEntries
+        .filter((e) => e.type === 'project')
+        .map((e) => e.data as Record<string, unknown>);
+    }
+
+    function stripNotes(item: Record<string, unknown>): Record<string, unknown> {
+      const { notes, ...rest } = item;
+      return rest;
+    }
+    function stripIds(items: Record<string, unknown>[]): Record<string, unknown>[] {
+      return items.map((item) => {
+        const { id, ...rest } = item;
+        return { ...rest, id: crypto.randomUUID() } as Record<string, unknown>;
+      });
+    }
+
     if (resume) {
       if (Array.isArray(sections) && sections.length > 0) {
-        // Import mode: use provided sections, ignore original ids
-        for (let i = 0; i < sections.length; i++) {
-          const s = sections[i];
+        // Import mode: use provided sections
+        // If profile is bound, personal_info comes from the profile — skip any in the import
+        let sortOrder = 0;
+        if (profileId && resolvedProfileData) {
+          const piLabel = resume.language === 'en' ? 'Personal Info' : '个人信息';
+          await resumeRepository.createSection({
+            resumeId: resume.id,
+            type: 'personal_info',
+            title: piLabel,
+            sortOrder: sortOrder++,
+            content: buildPersonalInfoContent(resolvedProfileData),
+          });
+        }
+        for (const s of sections) {
+          if (profileId && s.type === 'personal_info') continue; // profile provides this
           await resumeRepository.createSection({
             resumeId: resume.id,
             type: s.type,
             title: s.title,
-            sortOrder: i,
+            sortOrder: sortOrder++,
             visible: s.visible,
             content: s.content,
           });
@@ -61,10 +124,16 @@ export async function POST(request: NextRequest) {
           let content: unknown = {};
 
           if (s.type === 'personal_info') {
-            content = { fullName: '', jobTitle: '', email: '', phone: '', location: '' };
+            content = resolvedProfileData
+              ? buildPersonalInfoContent(resolvedProfileData)
+              : { fullName: '', jobTitle: '', email: '', phone: '', location: '' };
           } else if (s.type === 'summary') {
             content = { text: '' };
-          } else if (s.type === 'work_experience' || s.type === 'education' || s.type === 'projects' || s.type === 'certifications' || s.type === 'languages' || s.type === 'github' || s.type === 'custom') {
+          } else if (s.type === 'work_experience') {
+            content = { items: workEntries.length > 0 ? stripIds(workEntries.map(stripNotes)) : [] };
+          } else if (s.type === 'projects') {
+            content = { items: projectEntries.length > 0 ? stripIds(projectEntries.map(stripNotes)) : [] };
+          } else if (s.type === 'education' || s.type === 'certifications' || s.type === 'languages' || s.type === 'github' || s.type === 'custom') {
             content = { items: [] };
           } else if (s.type === 'skills') {
             content = { categories: [] };

@@ -30,7 +30,7 @@ export function useResume() {
     }
   }, []);
 
-  const createResume = useCallback(async (data: { title?: string; template?: string; language?: string }) => {
+  const createResume = useCallback(async (data: { title?: string; template?: string; language?: string; profileCodename?: string; experienceIds?: string[] }) => {
     try {
       const res = await fetch('/api/resume', {
         method: 'POST',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import {
@@ -12,6 +12,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TEMPLATES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { getAIHeaders } from '@/stores/settings-store';
@@ -22,12 +29,52 @@ import { templateLabelsMap } from '@/lib/template-labels';
 interface CreateResumeDialogProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { title?: string; template?: string; language?: string }) => Promise<any>;
+  onCreate: (data: { title?: string; template?: string; language?: string; profileCodename?: string; experienceIds?: string[] }) => Promise<any>;
 }
 
 type Tab = 'template' | 'upload';
 
 const ACCEPTED_EXTENSIONS = '.pdf,.png,.jpg,.jpeg,.webp';
+
+function useCodenames(open: boolean) {
+  const [codenames, setCodenames] = useState<{ id: string; codename: string }[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('jade_fingerprint') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (fingerprint) headers['x-fingerprint'] = fingerprint;
+    fetch('/api/profile/codenames', { headers })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setCodenames(data))
+      .catch(() => {});
+  }, [open]);
+
+  return codenames;
+}
+
+interface ExperienceRef {
+  id: string;
+  type: 'work' | 'project' | 'internship';
+  data: Record<string, unknown>;
+}
+
+function useExperienceRefs(open: boolean) {
+  const [experiences, setExperiences] = useState<ExperienceRef[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const fingerprint = typeof window !== 'undefined' ? localStorage.getItem('jade_fingerprint') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-profile-ui': '1' };
+    if (fingerprint) headers['x-fingerprint'] = fingerprint;
+    fetch('/api/experience', { headers })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setExperiences(data))
+      .catch(() => {});
+  }, [open]);
+
+  return experiences;
+}
 
 export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDialogProps) {
   const t = useTranslations();
@@ -35,7 +82,11 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
   const [tab, setTab] = useState<Tab>('template');
   const [title, setTitle] = useState('');
   const [template, setTemplate] = useState<string>('classic');
+  const [profileCodename, setProfileCodename] = useState<string>('');
+  const [selectedExperienceIds, setSelectedExperienceIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const codenames = useCodenames(open);
+  const experienceRefs = useExperienceRefs(open);
 
   // Upload state
   const [file, setFile] = useState<File | null>(null);
@@ -47,7 +98,12 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
   const handleCreate = async () => {
     setIsCreating(true);
     try {
-      const resume = await onCreate({ title: title || undefined, template });
+      const resume = await onCreate({
+        title: title || undefined,
+        template,
+        profileCodename: profileCodename || undefined,
+        experienceIds: selectedExperienceIds.length > 0 ? selectedExperienceIds : undefined,
+      });
       if (resume) {
         resetAndClose();
         router.push(`/editor/${resume.id}`);
@@ -107,6 +163,8 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
     onClose();
     setTitle('');
     setTemplate('classic');
+    setProfileCodename('');
+    setSelectedExperienceIds([]);
     setTab('template');
     setFile(null);
     setParseError('');
@@ -176,6 +234,131 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
+
+              <Select value={profileCodename} onValueChange={setProfileCodename}>
+                <SelectTrigger className="cursor-pointer">
+                  <SelectValue placeholder={t('dashboard.profilePlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="" className="cursor-pointer">
+                    {t('dashboard.profileNone')}
+                  </SelectItem>
+                  {codenames.map((c) => (
+                    <SelectItem key={c.id} value={c.codename} className="cursor-pointer font-mono">
+                      {c.codename}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Experience library picker */}
+              <div>
+                <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('dashboard.experienceLibraryLabel')}
+                </p>
+                {experienceRefs.length > 0 ? (
+                  <>
+                    <p className="mb-2 text-xs text-zinc-400">{t('dashboard.experienceLibraryHint')}</p>
+                    <div className="max-h-[180px] space-y-3 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                      {experienceRefs.filter((e) => e.type === 'work').length > 0 && (
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-zinc-500">{t('dashboard.workExperiences')}</p>
+                          {experienceRefs
+                            .filter((e) => e.type === 'work')
+                            .map((exp) => (
+                              <label
+                                key={exp.id}
+                                className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-300 accent-brand"
+                                  checked={selectedExperienceIds.includes(exp.id)}
+                                  onChange={(e) => {
+                                    setSelectedExperienceIds((prev) =>
+                                      e.target.checked
+                                        ? [...prev, exp.id]
+                                        : prev.filter((id) => id !== exp.id)
+                                    );
+                                  }}
+                                />
+                                <span className="truncate text-zinc-700 dark:text-zinc-300">
+                                  {(exp.data as any).company || (exp.data as any).name || t('common.noData')}
+                                  {(exp.data as any).position ? ` · ${(exp.data as any).position}` : ''}
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      )}
+                      {experienceRefs.filter((e) => e.type === 'internship').length > 0 && (
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-zinc-500">{t('dashboard.internshipExperiences')}</p>
+                          {experienceRefs
+                            .filter((e) => e.type === 'internship')
+                            .map((exp) => (
+                              <label
+                                key={exp.id}
+                                className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-300 accent-brand"
+                                  checked={selectedExperienceIds.includes(exp.id)}
+                                  onChange={(e) => {
+                                    setSelectedExperienceIds((prev) =>
+                                      e.target.checked
+                                        ? [...prev, exp.id]
+                                        : prev.filter((id) => id !== exp.id)
+                                    );
+                                  }}
+                                />
+                                <span className="truncate text-zinc-700 dark:text-zinc-300">
+                                  {(exp.data as any).company || (exp.data as any).name || t('common.noData')}
+                                  {(exp.data as any).position ? ` · ${(exp.data as any).position}` : ''}
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      )}
+                      {experienceRefs.filter((e) => e.type === 'project').length > 0 && (
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-zinc-500">{t('dashboard.projectExperiences')}</p>
+                          {experienceRefs
+                            .filter((e) => e.type === 'project')
+                            .map((exp) => (
+                              <label
+                                key={exp.id}
+                                className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5 cursor-pointer rounded border-zinc-300 accent-brand"
+                                  checked={selectedExperienceIds.includes(exp.id)}
+                                  onChange={(e) => {
+                                    setSelectedExperienceIds((prev) =>
+                                      e.target.checked
+                                        ? [...prev, exp.id]
+                                        : prev.filter((id) => id !== exp.id)
+                                    );
+                                  }}
+                                />
+                                <span className="truncate text-zinc-700 dark:text-zinc-300">
+                                  {(exp.data as any).name || (exp.data as any).company || t('common.noData')}
+                                  {(exp.data as any).position ? ` · ${(exp.data as any).position}` : ''}
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-center dark:border-zinc-600">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('dashboard.emptyExperienceLibrary')}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{t('dashboard.emptyExperienceLibraryHint')}</p>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <p className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
