@@ -5,6 +5,7 @@ import { generatePdf } from '@/lib/pdf/generate-pdf';
 import { generateHtml } from './builders';
 import { generatePlainText } from './plain-text';
 import { generateDocxBuffer } from './docx';
+import { EXPORT_SECTION_TYPES } from '@/lib/constants';
 
 // Chromium download + PDF render needs more time on Vercel serverless
 export const maxDuration = 60;
@@ -37,7 +38,23 @@ export async function GET(
 
     switch (format) {
       case 'json': {
-        return NextResponse.json(resume);
+        const sections = (resume.sections || [])
+          .filter((s: any) => EXPORT_SECTION_TYPES.has(s.type))
+          .map((s: any) => ({
+            type: s.type,
+            title: s.title,
+            content: s.content,
+          }));
+        return NextResponse.json({
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          profileCodename: (resume as any).profileCodename || null,
+          profileId: (resume as any).profileId || null,
+          title: resume.title,
+          template: resume.template,
+          language: (resume as any).language || 'zh',
+          sections,
+        });
       }
       case 'html': {
         // forPrint=true returns the print-optimized layout (used by the client-side

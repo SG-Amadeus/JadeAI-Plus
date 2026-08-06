@@ -50,15 +50,19 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, template, themeConfig, sections } = body;
+    const { title, template, themeConfig, sections, profileCodename, profileId } = body;
 
-    // Update resume metadata
-    if (title || template || themeConfig) {
-      await resumeRepository.update(id, {
-        ...(title && { title }),
-        ...(template && { template }),
-        ...(themeConfig && { themeConfig }),
-      });
+    // Update resume metadata (including profile binding)
+    const updateFields: Record<string, unknown> = {};
+    if (title) updateFields.title = title;
+    if (template) updateFields.template = template;
+    if (themeConfig) updateFields.themeConfig = themeConfig;
+    if (profileCodename !== undefined) {
+      updateFields.profileCodename = profileCodename || null;
+      updateFields.profileId = profileId || null;
+    }
+    if (Object.keys(updateFields).length > 0) {
+      await resumeRepository.update(id, updateFields);
     }
 
     // Sync sections: create new, update existing, delete removed

@@ -45,7 +45,7 @@ export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
       style={{ fontFamily: "'Microsoft YaHei', 'PingFang SC', 'SimSun', sans-serif" }}
     >
       <header className="relative">
-        <div className="min-h-[24px] pr-[78px] text-center">
+        <div className="min-h-[24px] pr-[100px] text-center">
           <h1 className="text-[20px] font-bold leading-none tracking-[0.08em]" style={{ color: BLUE }}>
             {pi.fullName || (zh ? '姓名' : 'Your Name')}
           </h1>
@@ -69,13 +69,12 @@ export function MinimalBlueTemplate({ resume }: { resume: Resume }) {
             ))}
           </div>
 
-          <div className="absolute right-0 top-0 flex h-[66px] w-[62px] items-center justify-center overflow-hidden">
+          <div className="absolute right-0 top-0 flex items-center justify-center">
             {pi.avatar ? (
               <AvatarImage
                 src={pi.avatar}
                 avatarStyle={resume.themeConfig?.avatarStyle}
-                size={62}
-                className="h-[66px] w-[62px] shrink-0 object-cover"
+                size={80}
               />
             ) : (
               <span className="text-[17px] font-bold" style={{ color: BLUE }}>

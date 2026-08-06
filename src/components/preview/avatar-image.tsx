@@ -18,9 +18,10 @@ export function AvatarImage({
   wrapperStyle,
 }: AvatarImageProps) {
   const isCircle = avatarStyle !== 'oneInch';
-  const width = size;
-  const height = isCircle ? size : Math.round(size * 1.4);
+  const width = isCircle ? size : Math.max(size, 96);
+  const height = isCircle ? width : Math.round(width * 1.4);
   const borderRadius = isCircle ? '9999px' : '4px';
+  const fit = isCircle ? 'cover' : 'contain';
 
   const imgEl = (
     <img
@@ -31,7 +32,8 @@ export function AvatarImage({
         width,
         height,
         borderRadius,
-        objectFit: 'cover',
+        objectFit: fit,
+        backgroundColor: isCircle ? undefined : '#f1f1f1',
         ...style,
       }}
     />

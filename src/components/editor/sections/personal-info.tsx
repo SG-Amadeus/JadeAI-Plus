@@ -20,7 +20,6 @@ function resizeImage(file: File, maxSize: number): Promise<string> {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
         let { width, height } = img;
         if (width > height) {
           if (width > maxSize) {
@@ -33,11 +32,14 @@ function resizeImage(file: File, maxSize: number): Promise<string> {
             height = maxSize;
           }
         }
+        const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
@@ -70,7 +72,7 @@ export function PersonalInfoSection({ section, onUpdate }: Props) {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const dataUrl = await resizeImage(file, 200);
+    const dataUrl = await resizeImage(file, 600);
     onUpdate({ avatar: dataUrl });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -82,10 +84,17 @@ export function PersonalInfoSection({ section, onUpdate }: Props) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-zinc-300 bg-zinc-50 transition-colors hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+          className={`relative flex shrink-0 items-center justify-center overflow-hidden border-2 border-dashed border-zinc-300 bg-zinc-50 transition-colors hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:border-zinc-500 dark:hover:bg-zinc-700 ${
+            avatarStyle === 'circle' ? 'h-20 w-20 rounded-full' : 'h-24 w-[68px] rounded'
+          }`}
         >
           {content.avatar ? (
-            <img src={content.avatar} alt="Avatar" className="h-full w-full object-cover" />
+            <img
+              src={content.avatar}
+              alt="Avatar"
+              className={`h-full w-full ${avatarStyle === 'circle' ? 'object-cover' : 'object-contain'}`}
+              style={avatarStyle !== 'circle' ? { backgroundColor: '#f1f1f1' } : undefined}
+            />
           ) : (
             <Camera className="h-6 w-6 text-zinc-400" />
           )}

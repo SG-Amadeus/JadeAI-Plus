@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
     const { messages, resumeId, model: modelId, sessionId } = await request.json();
 
     let resumeContext = '';
+    let profileCodename: string | null = null;
     if (resumeId) {
       const resume = await resumeRepository.findById(resumeId);
       if (resume) {
         resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
+        profileCodename = (resume as any).profileCodename || null;
       }
     }
 
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const result = streamText({
       model,
-      system: getSystemPrompt(resumeContext),
+      system: getSystemPrompt(resumeContext, profileCodename),
       messages: truncatedMessages,
       tools,
       stopWhen: tools ? stepCountIs(25) : undefined,

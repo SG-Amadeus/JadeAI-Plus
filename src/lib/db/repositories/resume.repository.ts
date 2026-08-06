@@ -54,7 +54,7 @@ export const resumeRepository = {
     return this.findById(id);
   },
 
-  async update(id: string, data: Partial<{ title: string; template: string; themeConfig: unknown; language: string }>) {
+  async update(id: string, data: Partial<{ title: string; template: string; themeConfig: unknown; language: string; profileId: string | null; profileCodename: string | null }>) {
     await db.update(resumes).set({ ...data, updatedAt: new Date() } as any).where(eq(resumes.id, id));
     return this.findById(id);
   },

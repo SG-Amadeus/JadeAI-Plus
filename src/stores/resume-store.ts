@@ -46,6 +46,11 @@ export const useResumeStore = create<ResumeStore>((set, get) => ({
       content: normalizeSectionContent(s.type, s.content) as unknown as typeof s.content,
     }));
 
+    // Auto-clear orphaned profileCodename (profile deleted but denormalized codename wasn't)
+    if (resume.profileCodename && !resume.profileId) {
+      resume = { ...resume, profileCodename: null };
+    }
+
     set({
       currentResume: { ...resume, sections },
       sections,
@@ -169,6 +174,8 @@ export const useResumeStore = create<ResumeStore>((set, get) => ({
           title: currentResume.title,
           template: currentResume.template,
           themeConfig: currentResume.themeConfig,
+          profileCodename: currentResume.profileCodename ?? null,
+          profileId: currentResume.profileId ?? null,
           sections: sections.map((s, i) => ({
             id: s.id,
             type: s.type,

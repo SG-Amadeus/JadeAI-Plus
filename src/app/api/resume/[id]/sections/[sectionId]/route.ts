@@ -24,6 +24,14 @@ export async function PUT(
   const section = resume!.sections.find((s: any) => s.id === sectionId);
   if (!section) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
 
+  // Guard: personal_info is managed by profile — reject CLI/API modifications
+  if (section.type === 'personal_info' && (resume as any).profileCodename) {
+    return NextResponse.json(
+      { error: `Personal info is managed by profile "${(resume as any).profileCodename}". Unbind the profile via UI first.` },
+      { status: 403 },
+    );
+  }
+
   const body = await request.json();
   const updates: Record<string, unknown> = {};
 
@@ -53,6 +61,14 @@ export async function DELETE(
 
   const section = resume!.sections.find((s: any) => s.id === sectionId);
   if (!section) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
+
+  // Guard: personal_info is managed by profile — reject CLI/API deletion
+  if (section.type === 'personal_info' && (resume as any).profileCodename) {
+    return NextResponse.json(
+      { error: `Personal info is managed by profile "${(resume as any).profileCodename}". Unbind the profile via UI first.` },
+      { status: 403 },
+    );
+  }
 
   await resumeRepository.deleteSection(sectionId);
   return NextResponse.json({ success: true });
