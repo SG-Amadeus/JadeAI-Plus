@@ -2,7 +2,6 @@ import { JadeClient } from '../client';
 import { Output } from '../output';
 import { readJsonFile, parseCsv } from './util';
 import { usageError } from '../errors';
-import { resolveAlias } from '../config';
 import type { ParsedArgs } from '../types';
 
 export async function itemUpdate(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
@@ -18,7 +17,7 @@ export async function itemUpdate(client: JadeClient, out: Output, args: ParsedAr
     ? JSON.parse(fieldsFlag)
     : readJsonFile(fieldsFlag);
 
-  const data = await client.put(`/api/resume/${resolveAlias(id)}/sections/${sid}/items/${iid}`, { fields });
+  const data = await client.put(`/api/resume/${id}/sections/${sid}/items/${iid}`, { fields });
   out.result(data);
 }
 
@@ -33,7 +32,7 @@ export async function itemReorder(client: JadeClient, out: Output, args: ParsedA
     ? readJsonFile<string[]>(orderFlag)
     : parseCsv(orderFlag);
 
-  const data = await client.put(`/api/resume/${resolveAlias(id)}/sections/${sid}/items/reorder`, { itemIds });
+  const data = await client.put(`/api/resume/${id}/sections/${sid}/items/reorder`, { itemIds });
   out.result(data);
 }
 
@@ -48,7 +47,7 @@ export async function itemAdd(client: JadeClient, out: Output, args: ParsedArgs)
     ? JSON.parse(itemFlag)
     : readJsonFile(itemFlag);
 
-  const data = await client.post(`/api/resume/${resolveAlias(id)}/sections/${sid}/items`, item);
+  const data = await client.post(`/api/resume/${id}/sections/${sid}/items`, item);
   out.result(data);
 }
 
@@ -57,6 +56,6 @@ export async function itemDelete(client: JadeClient, out: Output, args: ParsedAr
   const sid = args.positionals[3];
   const iid = args.positionals[4];
   if (!id || !sid || !iid) throw usageError('resume-id, section-id, and item-id are required');
-  await client.del(`/api/resume/${resolveAlias(id)}/sections/${sid}/items/${iid}`);
+  await client.del(`/api/resume/${id}/sections/${sid}/items/${iid}`);
   out.success(`Item ${iid} deleted`);
 }

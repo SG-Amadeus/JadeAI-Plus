@@ -3,12 +3,7 @@ import { JadeClient } from '../client';
 import { Output } from '../output';
 import { readJsonFile, writeOutput } from './util';
 import { usageError, apiError } from '../errors';
-import { resolveAlias, setAlias } from '../config';
 import type { ParsedArgs } from '../types';
-
-function toAlias(title: string): string {
-  return title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-}
 
 // ── create ──
 
@@ -17,17 +12,16 @@ export async function resumeCreate(client: JadeClient, out: Output, args: Parsed
   if (!title) throw usageError('--title is required');
   const template = (args.flags.template as string) || 'classic';
   const language = (args.flags.language as string) || 'zh';
+  const profileCodename = args.flags.profile as string | undefined;
   const sectionsFile = args.flags.sections as string | undefined;
 
   const body: Record<string, unknown> = { title, template, language };
+  if (profileCodename) body.profileCodename = profileCodename;
   if (sectionsFile) {
     body.sections = readJsonFile(sectionsFile);
   }
 
   const data = await client.post<{ id: string }>('/api/resume', body);
-  const alias = toAlias(title);
-  setAlias(alias, data.id);
-  out.progress(`Alias "${alias}" → ${data.id}`);
   out.result(data);
 }
 
@@ -42,8 +36,8 @@ export async function resumeList(client: JadeClient, out: Output, _args: ParsedA
 
 export async function resumeShow(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
-  const data = await client.get<{ id: string; title: string; parentId?: string | null }>(`/api/resume/${resolveAlias(id)}`);
+  if (!id) throw usageError('resume-id is required');
+  const data = await client.get<{ id: string; title: string; parentId?: string | null }>(`/api/resume/${id}`);
   out.result(data);
 }
 
@@ -51,14 +45,14 @@ export async function resumeShow(client: JadeClient, out: Output, args: ParsedAr
 
 export async function resumeDerive(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('root-resume-id or alias is required');
+  if (!id) throw usageError('root-resume-id is required');
 
   const body: Record<string, unknown> = {};
   if (args.flags.title) body.title = args.flags.title;
   if (args.flags.template) body.template = args.flags.template;
   if (args.flags.language) body.language = args.flags.language;
 
-  const data = await client.post(`/api/resume/${resolveAlias(id)}/derive`, body);
+  const data = await client.post(`/api/resume/${id}/derive`, body);
   out.result(data);
 }
 
@@ -66,8 +60,8 @@ export async function resumeDerive(client: JadeClient, out: Output, args: Parsed
 
 export async function resumeDetach(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
-  const data = await client.post(`/api/resume/${resolveAlias(id)}/detach`);
+  if (!id) throw usageError('resume-id is required');
+  const data = await client.post(`/api/resume/${id}/detach`);
   out.result(data);
 }
 
@@ -75,7 +69,7 @@ export async function resumeDetach(client: JadeClient, out: Output, args: Parsed
 
 export async function resumeExport(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
+  if (!id) throw usageError('resume-id is required');
   const format = args.flags.format as string;
   if (!format) throw usageError('--format <json|html|txt|docx|pdf> is required');
 
@@ -83,7 +77,7 @@ export async function resumeExport(client: JadeClient, out: Output, args: Parsed
   if (args.flags['fit-one-page']) params.set('fitOnePage', 'true');
   if (args.flags['for-print']) params.set('forPrint', 'true');
 
-  const { data: buf, filename } = await client.fetchBlob(`/api/resume/${resolveAlias(id)}/export?${params}`);
+  const { data: buf, filename } = await client.fetchBlob(`/api/resume/${id}/export?${params}`);
   const outFile = (args.flags.out as string | undefined) || filename;
   writeOutput(buf, outFile);
   out.success(`Exported to ${outFile}`);
@@ -93,7 +87,7 @@ export async function resumeExport(client: JadeClient, out: Output, args: Parsed
 
 export async function resumeUpdate(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
+  if (!id) throw usageError('resume-id is required');
 
   const body: Record<string, unknown> = {};
   if (args.flags.title) body.title = args.flags.title;
@@ -103,7 +97,7 @@ export async function resumeUpdate(client: JadeClient, out: Output, args: Parsed
   }
   if (Object.keys(body).length === 0) throw usageError('at least one of --title, --template, --theme is required');
 
-  const data = await client.put(`/api/resume/${resolveAlias(id)}`, body);
+  const data = await client.put(`/api/resume/${id}`, body);
   out.result(data);
 }
 
@@ -111,12 +105,12 @@ export async function resumeUpdate(client: JadeClient, out: Output, args: Parsed
 
 export async function resumeDuplicate(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
+  if (!id) throw usageError('resume-id is required');
 
   const body: Record<string, unknown> = {};
   if (args.flags.title) body.title = args.flags.title;
 
-  const data = await client.post(`/api/resume/${resolveAlias(id)}/duplicate`, body);
+  const data = await client.post(`/api/resume/${id}/duplicate`, body);
   out.result(data);
 }
 
@@ -124,10 +118,9 @@ export async function resumeDuplicate(client: JadeClient, out: Output, args: Par
 
 export async function resumeDelete(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) throw usageError('resume-id or alias is required');
-  const rid = resolveAlias(id);
+  if (!id) throw usageError('resume-id is required');
   const force = args.flags.force === true;
-  const path = force ? `/api/resume/${rid}?force=true` : `/api/resume/${rid}`;
+  const path = force ? `/api/resume/${id}?force=true` : `/api/resume/${id}`;
   try {
     await client.del(path);
     out.success(`Resume ${id} deleted`);

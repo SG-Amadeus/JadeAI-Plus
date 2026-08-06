@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { JadeClient } from '../client';
 import { Output } from '../output';
-import { resolveAlias } from '../config';
 import { usageError } from '../errors';
 import type { ParsedArgs } from '../types';
 
@@ -15,12 +14,11 @@ interface Section {
 }
 
 export async function pull(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
-  const aliasOrId = args.positionals[1];
-  if (!aliasOrId) throw usageError('alias or resume-id is required');
+  const id = args.positionals[1];
+  if (!id) throw usageError('resume-id is required');
   const outDir = args.flags.out as string;
   if (!outDir) throw usageError('--out <dir> is required');
 
-  const id = resolveAlias(aliasOrId);
   const resume = await client.get<{ id: string; title: string; sections: Section[] }>(`/api/resume/${id}`);
 
   const dir = resolve(outDir);
@@ -35,5 +33,5 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
     count++;
   }
 
-  out.success(`Pulled ${count} sections from "${aliasOrId}" to ${dir}/`);
+  out.success(`Pulled ${count} sections from "${id}" to ${dir}/`);
 }

@@ -49,10 +49,8 @@ export const HELP_SECTION = [
 export const HELP_PING = `${cmd('ping', 'Test connectivity to the JadeAI server')}`;
 export const HELP_START = `${cmd('start', 'Start the dev server (pnpm dev)')}`;
 
-export const HELP_ALIAS = [
-  cmd('alias add', 'Map a short name to a resume UUID'),
-  cmd('alias list', 'Show all aliases'),
-  cmd('alias remove', 'Remove an alias (keeps resume)'),
+export const HELP_PROFILE = [
+  cmd('profile list', 'List profile codenames (PI managed in web UI only)'),
 ].join('\n');
 
 export const HELP_IMPORT = [
@@ -68,7 +66,7 @@ export const HELP_ITEM = [
 ].join('\n');
 
 export function getTopHelp(): string {
-  return [HELP_TOP, '', hdr('Infra'), HELP_PING, HELP_START, '', hdr('Template'), HELP_TEMPLATE, '', hdr('Alias'), HELP_ALIAS, '', hdr('Import/Export'), HELP_IMPORT, '', hdr('Resume'), HELP_RESUME, '', hdr('Section'), HELP_SECTION, '', hdr('Item'), HELP_ITEM, '', `Run 'jadeai <command> --help' for detailed usage.`].join('\n');
+  return [HELP_TOP, '', hdr('Infra'), HELP_PING, HELP_START, '', hdr('Template'), HELP_TEMPLATE, '', hdr('Profile'), HELP_PROFILE, '', hdr('Import/Export'), HELP_IMPORT, '', hdr('Resume'), HELP_RESUME, '', hdr('Section'), HELP_SECTION, '', hdr('Item'), HELP_ITEM, '', `Run 'jadeai <command> --help' for detailed usage.`].join('\n');
 }
 
 // ── Per-command help strings ──
@@ -107,6 +105,7 @@ Options:
   --title <t>          Resume title (required)
   --template <id>      Template id (default: classic)
   --language <lang>    Content language: zh|en (default: zh)
+  --profile <codename> Personal profile codename to prefill personal_info
   --sections <file>    JSON file with initial sections
   --json               Machine-readable output`,
 
@@ -146,23 +145,9 @@ Options:
   --for-print        Print-optimized layout (HTML only)
   --json             Return JSON with file path info`,
 
-  'alias add': `Map a short name to a resume UUID.
-
-Usage: jadeai alias add <name> <resume-id>
-
-Use the alias in place of resume-id for all other commands.`,
-
-  'alias list': `List all defined aliases.
-
-Usage: jadeai alias list`,
-
-  'alias remove': `Remove an alias. Does NOT delete the resume.
-
-Usage: jadeai alias remove <name>`,
-
   pull: `Export resume sections to local JSON files for editing.
 
-Usage: jadeai pull <alias-or-id> --out <dir>
+Usage: jadeai pull <resume-id> --out <dir>
 
 Options:
   --out <dir>  Output directory (required)
@@ -171,16 +156,27 @@ Writes one <section-type>.json file per section. Skips inherited sections on der
 
   push: `Sync local JSON changes back to the server.
 
-Usage: jadeai push <alias-or-id> --from <dir>
+Usage: jadeai push <resume-id> --from <dir>
 
 Options:
   --from <dir>  Directory containing the JSON files (required)
 
 Reads <type>.json files, matches them to sections by type, and updates the server.`,
 
+  'profile list': `List personal profile codenames.
+
+Usage: jadeai profile list [options]
+
+Options:
+  --json   Machine-readable output
+
+Returns codenames and IDs only. Personal profile DATA (fullName, email, phone, etc.)
+is managed exclusively through the web UI. No CLI commands exist to read or write
+profile data — this is a security boundary for AI agents.`,
+
   'section reorder': `Reorder sections of a resume.
 
-Usage: jadeai section reorder <alias-or-id> --order <id,id,...> [options]
+Usage: jadeai section reorder <resume-id> --order <id,id,...> [options]
 
 Options:
   --order <ids>   Comma-separated section ids in desired order (required)

@@ -2,7 +2,6 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { resolve, basename } from 'path';
 import { JadeClient } from '../client';
 import { Output } from '../output';
-import { resolveAlias } from '../config';
 import { usageError } from '../errors';
 import type { ParsedArgs } from '../types';
 
@@ -12,17 +11,15 @@ interface Section {
 }
 
 export async function push(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
-  const aliasOrId = args.positionals[1];
-  if (!aliasOrId) throw usageError('alias or resume-id is required');
+  const id = args.positionals[1];
+  if (!id) throw usageError('resume-id is required');
   const fromDir = args.flags.from as string;
   if (!fromDir) throw usageError('--from <dir> is required');
-
-  const id = resolveAlias(aliasOrId);
   const dir = resolve(fromDir);
   if (!existsSync(dir)) throw usageError(`Directory not found: ${dir}`);
 
-  // Get current sections to map type → section-id
-  const resume = await client.get<{ sections: Section[] }>(`/api/resume/${id}`);
+  // Get current resume (sections + profile binding)
+  const resume = await client.get<{ sections: Section[]; profileCodename?: string | null }>(`/api/resume/${id}`);
   const typeToId = new Map<string, string>();
   for (const s of resume.sections) {
     typeToId.set(s.type, s.id);
@@ -32,6 +29,11 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
   for (const file of readdirSync(dir)) {
     if (!file.endsWith('.json')) continue;
     const type = basename(file, '.json');
+
+    if (type === 'personal_info' && resume.profileCodename) {
+      out.progress(`Skipping ${file}: personal_info is managed by profile "${resume.profileCodename}"`);
+      continue;
+    }
 
     const sid = typeToId.get(type);
     if (!sid) {
@@ -45,5 +47,5 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
     count++;
   }
 
-  out.success(`Pushed ${count} sections to "${aliasOrId}" from ${dir}/`);
+  out.success(`Pushed ${count} sections to "${id}" from ${dir}/`);
 }

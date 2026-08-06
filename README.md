@@ -35,7 +35,7 @@ jadeai push my-resume --from ./data/                    # Sync edits back
 jadeai resume export my-resume --format pdf --out cv.pdf   # Export PDF
 ```
 
-**23 CLI commands** covering the full resume lifecycle: template browsing, CRUD, section/item management, alias system, import/export, and server management.
+**20 CLI commands** covering the full resume lifecycle: template browsing, CRUD, section/item management, profile management, import/export, and server management.
 
 ### Root/Derivative Branching — One Profile, Many JDs
 
@@ -50,7 +50,7 @@ Root (personal_info + detailed experiences)
 
 - **PII is NEVER visible to AI** — inherited personal_info is filtered from all 9 AI endpoints
 - **Edit once, sync everywhere** — update root PII, all derivatives reflect instantly
-- **Alias system** — short names like `me`, `bytedance` instead of UUIDs
+- **Profile management** — reusable personal info with AI security boundary
 - **Pull/Push workflow** — export sections as editable JSON files, edit locally, sync back
 
 ### AI Privacy Hardening
@@ -176,15 +176,15 @@ jadeai ping        # test connectivity
 | `jadeai start` | Start dev server |
 | `jadeai ping` | Test connectivity |
 | `jadeai template list` | Browse 50 templates |
-| `jadeai resume create` | Create root resume (auto-aliased) |
+| `jadeai resume create` | Create root resume |
 | `jadeai resume derive` | Branch derivative for a JD |
 | `jadeai resume detach` | Promote derivative to standalone |
 | `jadeai resume list/show/export/update/duplicate/delete/parse` | Full CRUD |
 | `jadeai section list/add/update/delete/reorder` | Section management |
 | `jadeai item add/update/delete/reorder` | Item management |
-| `jadeai alias add/list/remove` | Short name → UUID mapping |
-| `jadeai pull <alias> --out <dir>` | Export sections as local JSON |
-| `jadeai push <alias> --from <dir>` | Sync local JSON back to server |
+| `jadeai profile list` | List profile codenames |
+| `jadeai pull <resume-id> --out <dir>` | Export sections as local JSON |
+| `jadeai push <resume-id> --from <dir>` | Sync local JSON back to server |
 
 See `.claude/skills/jadeai/SKILL.md` for the full agent workflow reference.
 
@@ -259,7 +259,7 @@ cli/
 ├── commands/                   # 23 CLI command handlers
 ├── index.ts                    # CLI entry + arg parser
 ├── client.ts                   # HTTP client (zero deps)
-└── config.ts                   # Alias storage (~/.jadeai/)
+└── config.ts                   # Configuration helpers
 ```
 
 ## Contributing

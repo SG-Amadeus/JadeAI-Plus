@@ -19,9 +19,9 @@ import {
 } from './commands/item';
 import { ping } from './commands/ping';
 import { start } from './commands/start';
-import { aliasAdd, aliasList, aliasRemove } from './commands/alias';
 import { pull } from './commands/pull';
 import { push } from './commands/push';
+import { profileList } from './commands/profile';
 
 // ── Command registry (ordered by lifecycle) ──
 interface CommandDef {
@@ -35,9 +35,7 @@ const COMMANDS: CommandDef[] = [
 
   { path: ['template', 'list'], run: templateList },
 
-  { path: ['alias', 'add'], run: aliasAdd },
-  { path: ['alias', 'list'], run: aliasList },
-  { path: ['alias', 'remove'], run: aliasRemove },
+  { path: ['profile', 'list'], run: profileList },
 
   { path: ['resume', 'create'], run: resumeCreate },
   { path: ['resume', 'derive'], run: resumeDerive },
@@ -52,15 +50,6 @@ const COMMANDS: CommandDef[] = [
 
   { path: ['pull'], run: pull },
   { path: ['push'], run: push },
-  { path: ['resume', 'derive'], run: resumeDerive },
-  { path: ['resume', 'detach'], run: resumeDetach },
-  { path: ['resume', 'show'], run: resumeShow },
-  { path: ['resume', 'list'], run: resumeList },
-  { path: ['resume', 'export'], run: resumeExport },
-  { path: ['resume', 'update'], run: resumeUpdate },
-  { path: ['resume', 'duplicate'], run: resumeDuplicate },
-  { path: ['resume', 'delete'], run: resumeDelete },
-  { path: ['resume', 'parse'], run: resumeParse },
 
   { path: ['section', 'list'], run: sectionList },
   { path: ['section', 'reorder'], run: sectionReorder },
