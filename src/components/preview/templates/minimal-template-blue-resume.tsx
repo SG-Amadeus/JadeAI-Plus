@@ -11,7 +11,7 @@ import type {
   CustomContent,
   GitHubContent,
 } from '@/types/resume';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { QrCodesPreview } from '../qr-codes-preview';
 
@@ -215,13 +215,19 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
       <div className="space-y-3">
         {(content.items || []).map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
-            <EntryHeader
-              left={item.institution}
-              middle={degreeField(item.degree, item.field)}
-              right={<DateRange item={item} lang={lang} />}
-            />
+            <div className="flex items-center text-[11px] font-semibold leading-5" style={{ color: BLUE }}>
+              <span className="shrink-0">{item.degree}</span>
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="shrink-0">{item.institution}</span>
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="shrink-0">{item.field}</span>
+              <span className="mx-2 h-px min-w-4 flex-1 bg-[#073b82]" />
+              <span className="shrink-0 whitespace-nowrap">
+                <DateRange item={item} lang={lang} />
+              </span>
+            </div>
             {(item.gpa || item.description) && (
-              <p className="mt-1 text-[10px] leading-[1.55] text-[#20242c]">
+              <p className="mt-1 text-[11px] leading-[1.55] text-[#20242c]">
                 {item.gpa && (
                   <>
                     <span className="font-semibold" style={{ color: BLUE }}>
