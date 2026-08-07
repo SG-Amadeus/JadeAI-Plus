@@ -40,9 +40,15 @@ export const experienceRepository = {
   },
 
   async update(id: string, data: { type?: 'work' | 'project' | 'internship'; data?: Record<string, unknown> }): Promise<Experience | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
     const setData: Record<string, unknown> = { updatedAt: new Date() as any };
     if (data.type !== undefined) setData.type = data.type;
-    if (data.data !== undefined) setData.data = data.data as any;
+    if (data.data !== undefined) {
+      // Merge partial update into existing data — prevent data loss from partial payloads
+      const merged = { ...(existing.data as Record<string, unknown>), ...data.data };
+      setData.data = merged;
+    }
     await db.update(experiences).set(setData as any).where(eq(experiences.id, id));
     return this.findById(id);
   },

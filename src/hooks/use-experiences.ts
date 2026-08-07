@@ -98,7 +98,15 @@ export function useExperiences() {
     }));
 
     const existing = dirty.current.get(id) || {};
-    dirty.current.set(id, { ...existing, ...data });
+    // Merge data.data sub-fields so rapid edits to different fields don't clobber each other
+    const mergedData = data.data !== undefined && existing.data !== undefined
+      ? { ...(existing.data as Record<string, unknown>), ...data.data }
+      : data.data;
+    dirty.current.set(id, {
+      ...existing,
+      ...data,
+      data: mergedData ?? data.data ?? existing.data,
+    });
 
     const existingTimer = timers.current.get(id);
     if (existingTimer) clearTimeout(existingTimer);
