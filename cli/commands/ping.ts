@@ -1,5 +1,6 @@
 import { JadeClient } from '../client';
 import { Output } from '../output';
+import { networkError, apiError, EX_API } from '../errors';
 import type { ParsedArgs } from '../types';
 
 export async function ping(client: JadeClient, out: Output, _args: ParsedArgs): Promise<void> {
@@ -10,15 +11,14 @@ export async function ping(client: JadeClient, out: Output, _args: ParsedArgs): 
     if (data.ok) {
       out.result({ ...data, latencyMs: elapsed });
     } else {
-      out.error('Ping returned unexpected response');
+      throw apiError('Ping returned unexpected response', 200);
     }
   } catch (err: any) {
     const elapsed = Date.now() - start;
-    if (err?.code === 3) {
-      // API error — server responded but auth failed or other issue
-      out.error(`Server responded (${elapsed}ms) but: ${err.message}`);
-    } else {
-      out.error(`Cannot reach server (${elapsed}ms): ${err.message || err}`);
+    if (err.code === EX_API) {
+      err.message = `${err.message} (${elapsed}ms)`;
+      throw err;
     }
+    throw networkError(`Cannot reach server (${elapsed}ms): ${err.message || err}`);
   }
 }

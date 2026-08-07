@@ -123,9 +123,9 @@ function EntryHeader({
   return (
     <div className="flex min-w-0 items-center text-[12pt] font-bold leading-5" style={{ color: BLUE }}>
       {left && <span className="max-w-[42%] shrink-0 truncate">{left}</span>}
-      {middle && <span className={SEP} />}
+      {left && middle && <span className={SEP} />}
       {middle && <span className="max-w-[36%] shrink-0 truncate">{middle}</span>}
-      {middle && right && <span className={SEP} />}
+      {(left || middle) && right && <span className={SEP} />}
       {right && <span className="shrink-0 whitespace-nowrap text-[11pt]">{right}</span>}
     </div>
   );

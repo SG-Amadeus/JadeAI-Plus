@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { JadeClient } from '../client';
 import { Output } from '../output';
+import { usageError } from '../errors';
 import type { ParsedArgs } from '../types';
 
 interface ExperienceEntry {
@@ -32,10 +33,7 @@ export async function experienceList(client: JadeClient, out: Output, args: Pars
 /** Show a single experience entry. */
 export async function experienceShow(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) {
-    out.failure('experience show <id> — id is required');
-    process.exit(1);
-  }
+  if (!id) throw usageError('experience show <id> — id is required');
   const entry = await client.get<ExperienceEntry>(`/api/experience/${id}`);
   out.result(entry);
 }
@@ -46,20 +44,17 @@ export async function experienceCreate(client: JadeClient, out: Output, args: Pa
   const raw = args.flags.data as string | undefined;
 
   if (!type || !['work', 'project', 'internship'].includes(type)) {
-    out.failure('experience create --type <work|project|internship> --data <json|@file.json>');
-    process.exit(1);
+    throw usageError('experience create --type <work|project|internship> --data <json|@file.json>');
   }
   if (!raw) {
-    out.failure('experience create requires --data (inline JSON or @file.json)');
-    process.exit(1);
+    throw usageError('experience create requires --data (inline JSON or @file.json)');
   }
 
   let data: Record<string, unknown>;
   try {
     data = resolveData(raw);
   } catch {
-    out.failure('Invalid JSON in --data');
-    process.exit(1);
+    throw usageError('Invalid JSON in --data');
   }
 
   const entry = await client.post<ExperienceEntry>('/api/experience', { type, data });
@@ -69,22 +64,17 @@ export async function experienceCreate(client: JadeClient, out: Output, args: Pa
 /** Update an experience entry (partial merge on data). */
 export async function experienceUpdate(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) {
-    out.failure('experience update <id> — id is required');
-    process.exit(1);
-  }
+  if (!id) throw usageError('experience update <id> — id is required');
 
   const type = args.flags.type as string | undefined;
   const raw = args.flags.data as string | undefined;
 
   if (!type && raw === undefined) {
-    out.failure('experience update requires at least one of --type or --data');
-    process.exit(1);
+    throw usageError('experience update requires at least one of --type or --data');
   }
 
   if (type && !['work', 'project', 'internship'].includes(type)) {
-    out.failure('--type must be work, project, or internship');
-    process.exit(1);
+    throw usageError('--type must be work, project, or internship');
   }
 
   const body: Record<string, unknown> = {};
@@ -93,8 +83,7 @@ export async function experienceUpdate(client: JadeClient, out: Output, args: Pa
     try {
       body.data = resolveData(raw);
     } catch {
-      out.failure('Invalid JSON in --data');
-      process.exit(1);
+      throw usageError('Invalid JSON in --data');
     }
   }
 
@@ -105,14 +94,10 @@ export async function experienceUpdate(client: JadeClient, out: Output, args: Pa
 /** Delete an experience entry. */
 export async function experienceDelete(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
-  if (!id) {
-    out.failure('experience delete <id> — id is required');
-    process.exit(1);
-  }
+  if (!id) throw usageError('experience delete <id> — id is required');
 
   if (!args.flags.force) {
-    out.failure('experience delete requires --force to confirm');
-    process.exit(1);
+    throw usageError('experience delete requires --force to confirm');
   }
 
   await client.del(`/api/experience/${id}`);

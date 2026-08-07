@@ -17,9 +17,9 @@ const SEP = 'mx-2 h-px min-w-4 flex-1 bg-[#1F4E79]';
 function buildEntryHeader(left?: string, middle?: string, right?: string): string {
   const parts: string[] = [];
   if (left) parts.push(`<span class="max-w-[42%] shrink-0 truncate">${esc(left)}</span>`);
-  if (middle) parts.push(`<span class="${SEP}"></span>`);
+  if (left && middle) parts.push(`<span class="${SEP}"></span>`);
   if (middle) parts.push(`<span class="max-w-[36%] shrink-0 truncate">${esc(middle)}</span>`);
-  if (middle && right) parts.push(`<span class="${SEP}"></span>`);
+  if ((left || middle) && right) parts.push(`<span class="${SEP}"></span>`);
   if (right) parts.push(`<span class="shrink-0 whitespace-nowrap text-[11pt]">${esc(right)}</span>`);
   return `<div class="flex min-w-0 items-center text-[12pt] font-bold leading-5" style="color:#1F4E79">${parts.join('')}</div>`;
 }

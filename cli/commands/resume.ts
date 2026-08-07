@@ -14,11 +14,15 @@ export async function resumeCreate(client: JadeClient, out: Output, args: Parsed
   const language = (args.flags.language as string) || 'zh';
   const profileCodename = args.flags.profile as string | undefined;
   const sectionsFile = args.flags.sections as string | undefined;
+  const experienceIds = args.flags['experience-ids'] as string | undefined;
 
   const body: Record<string, unknown> = { title, template, language };
   if (profileCodename) body.profileCodename = profileCodename;
   if (sectionsFile) {
     body.sections = readJsonFile(sectionsFile);
+  }
+  if (experienceIds) {
+    body.experienceIds = experienceIds.split(',').map((id) => id.trim()).filter(Boolean);
   }
 
   const data = await client.post<{ id: string }>('/api/resume', body);
@@ -141,8 +145,8 @@ export async function resumeParse(client: JadeClient, out: Output, args: ParsedA
   const { readFileSync } = await import('fs');
   const file = readFileSync(filePath);
 
-  // Use FormData via the API
-  const url = `${process.env.JADEAI_BASE_URL || 'http://localhost:3000'}/api/resume/parse`;
+  // Use FormData via the API — raw fetch needed for multipart file upload
+  const url = `${args.global.baseUrl}/api/resume/parse`;
   const form = new FormData();
   form.append('file', new Blob([file]), basename(filePath));
   if (args.flags.template) form.append('template', args.flags.template as string);

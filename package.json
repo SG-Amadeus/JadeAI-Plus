@@ -8,6 +8,7 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "dev": "next dev --turbopack",
+    "setup": "pnpm build:export-css",
     "build:export-css": "tsx scripts/build-export-css.ts",
     "cli": "tsx cli/index.ts",
     "prebuild": "pnpm build:export-css",
