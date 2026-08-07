@@ -4,12 +4,15 @@
 export interface LibraryWorkData {
   company: string;
   position: string;
+  department?: string;
+  location?: string;
   startDate: string;
   endDate: string | null;
   current: boolean;
   summary: string;             // full narrative description — the source of truth
   technologies: string[];
   highlights?: string[];       // AI-generated per JD, NOT manually maintained
+  projects?: { name: string; highlights: string[] }[];  // sub-projects
   notes?: string;              // internal AI reference, stripped when copying to resume
 }
 

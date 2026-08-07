@@ -34,6 +34,10 @@ export function WorkExperienceForm({ value, onChange, onBlur }: WorkFormProps) {
         <EditableText label={tf('position')} value={value.position || ''} onChange={(v) => onChange({ position: v })} />
       </FieldWrapper>
       <FieldWrapper>
+        <EditableText label={tf('department')} value={value.department || ''} onChange={(v) => onChange({ department: v })} />
+        <EditableText label={tf('location')} value={value.location || ''} onChange={(v) => onChange({ location: v })} />
+      </FieldWrapper>
+      <FieldWrapper>
         <EditableDate label={tf('startDate')} value={value.startDate || ''} onChange={(v) => handleDateChange('startDate', v)} />
         <EditableDate label={tf('endDate')} value={value.endDate || ''} onChange={(v) => handleDateChange('endDate', v)} />
       </FieldWrapper>

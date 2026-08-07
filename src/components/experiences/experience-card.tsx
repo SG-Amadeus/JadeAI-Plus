@@ -27,6 +27,9 @@ export function ExperienceCard({ id: _id, type, data, saveState, onUpdate, onBlu
     ? [(data.company as string), (data.position as string)].filter(Boolean).join(' · ') || t('badgeWork')
     : (data.name as string) || t('badgeProject');
 
+  const subtitle = type === 'work' || type === 'internship'
+    ? [(data.department as string), (data.location as string)].filter(Boolean).join(' · ') || null
+    : null;
   const dateRange = [data.startDate as string, data.endDate as string].filter(Boolean).join(' — ') || null;
   const techs = (data.technologies as string[]) || [];
 
@@ -74,6 +77,9 @@ export function ExperienceCard({ id: _id, type, data, saveState, onUpdate, onBlu
           <div className="truncate text-sm font-semibold text-zinc-800 dark:text-zinc-200">
             {title}
           </div>
+          {subtitle && (
+            <div className="text-xs text-zinc-500">{subtitle}</div>
+          )}
           {dateRange && (
             <div className="text-xs text-zinc-400">{dateRange}</div>
           )}
