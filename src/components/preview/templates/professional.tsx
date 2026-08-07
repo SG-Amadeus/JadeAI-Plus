@@ -1,4 +1,3 @@
-'use client';
 
 import type {
   Resume,
@@ -21,7 +20,7 @@ export function ProfessionalTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((s) => s.type === 'personal_info');
   const pi = (personalInfo?.content || {}) as PersonalInfoContent;
 
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const contacts = [pi.phone, pi.email, pi.gender, pi.age, pi.ethnicity, pi.politicalStatus, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.wechat, pi.location, pi.website].filter(Boolean);
 
   return (
     <div className="mx-auto max-w-[210mm] bg-white shadow-lg" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
@@ -95,6 +94,9 @@ function ProfessionalSectionContent({ section, lang }: { section: any; lang?: st
               </div>
               <span className="shrink-0 text-xs text-zinc-400 italic">{item.startDate} – {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
+            {item.department && (
+              <p className="text-sm text-zinc-600">{lang === 'zh' ? '部门：' : 'Department: '}{item.department}</p>
+            )}
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
               <p className="mt-0.5 text-xs text-zinc-400">{lang === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
@@ -105,6 +107,20 @@ function ProfessionalSectionContent({ section, lang }: { section: any; lang?: st
                   <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
+            )}
+            {item.projects?.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {item.projects.map((proj: any) => (
+                  <div key={proj.id}>
+                    <p className="text-sm font-bold" style={{ color: '#1e3a5f' }}>{proj.name}</p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {proj.highlights.map((h: string, i: number) => (
+                        <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}
@@ -127,6 +143,7 @@ function ProfessionalSectionContent({ section, lang }: { section: any; lang?: st
             </div>
             <p className="text-sm text-zinc-600">{degreeField(item.degree, item.field)}</p>
             {item.gpa && <p className="text-xs text-zinc-500">GPA: {item.gpa}</p>}
+            {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-5">
                 {item.highlights.map((h: string, i: number) => (

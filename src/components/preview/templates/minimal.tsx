@@ -1,4 +1,3 @@
-'use client';
 
 import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent, EducationContent, SkillsContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
 import { degreeField, isSectionEmpty, md } from '../utils';
@@ -21,16 +20,16 @@ export function MinimalTemplate({ resume }: { resume: Resume }) {
             <h1 className="text-xl font-medium text-zinc-900">{pi.fullName || 'Your Name'}</h1>
             <div className="mt-1 flex flex-wrap gap-3 text-sm text-zinc-500">
               {pi.jobTitle && <span>{pi.jobTitle}</span>}
-              {pi.age && <span>{pi.age}</span>}
-              {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
+              {pi.phone && <span>{pi.phone}</span>}
+              {pi.email && <span>{pi.email}</span>}
               {pi.gender && <span>{pi.gender}</span>}
+              {pi.age && <span>{pi.age}</span>}
               {pi.ethnicity && <span>{pi.ethnicity}</span>}
+              {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
               {pi.hometown && <span>{pi.hometown}</span>}
               {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
               {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
               {pi.educationLevel && <span>{pi.educationLevel}</span>}
-              {pi.email && <span>{pi.email}</span>}
-              {pi.phone && <span>{pi.phone}</span>}
               {pi.wechat && <span>{pi.wechat}</span>}
               {pi.location && <span>{pi.location}</span>}
               {pi.linkedin && <span>LinkedIn: {pi.linkedin}</span>}
@@ -68,6 +67,9 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
         {(content.items || []).map((item: any) => (
           <div key={item.id}>
             <p className="text-sm"><span className="font-medium text-zinc-800">{item.position}</span> {item.company && <span className="text-zinc-500">/ {item.company}</span>}</p>
+            {item.department && (
+              <p className="text-sm text-zinc-600">{lang === 'zh' ? '部门：' : 'Department: '}{item.department}</p>
+            )}
             <p className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</p>
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
@@ -79,6 +81,20 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
                   <li key={i} className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
+            )}
+            {item.projects?.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {item.projects.map((proj: any) => (
+                  <div key={proj.id}>
+                    <p className="text-sm font-medium text-zinc-800">{proj.name}</p>
+                    <ul className="mt-1 list-disc pl-4">
+                      {proj.highlights.map((h: string, i: number) => (
+                        <li key={i} className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}
@@ -95,6 +111,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
             <p className="text-sm text-zinc-600">{degreeField(item.degree, item.field)}</p>
             <p className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</p>
             {item.gpa && <p className="text-xs text-zinc-400">GPA: {item.gpa}</p>}
+            {item.description && <p className="mt-1 text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
                 {item.highlights.map((h: string, i: number) => (

@@ -1,4 +1,3 @@
-'use client';
 
 import type {
   Resume,
@@ -35,16 +34,16 @@ export function ClassicTemplate({ resume }: { resume: Resume }) {
           </div>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
-          {pi.age && <span>{pi.age}</span>}
-          {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
+          {pi.phone && <span>{pi.phone}</span>}
+          {pi.email && <span>{pi.email}</span>}
           {pi.gender && <span>{pi.gender}</span>}
+          {pi.age && <span>{pi.age}</span>}
           {pi.ethnicity && <span>{pi.ethnicity}</span>}
+          {pi.politicalStatus && <span>{pi.politicalStatus}</span>}
           {pi.hometown && <span>{pi.hometown}</span>}
           {pi.maritalStatus && <span>{pi.maritalStatus}</span>}
           {pi.yearsOfExperience && <span>{pi.yearsOfExperience}</span>}
           {pi.educationLevel && <span>{pi.educationLevel}</span>}
-          {pi.email && <span>{pi.email}</span>}
-          {pi.phone && <span>{pi.phone}</span>}
           {pi.wechat && <span>{pi.wechat}</span>}
           {pi.location && <span>{pi.location}</span>}
           {pi.website && <span>{pi.website}</span>}
@@ -88,6 +87,9 @@ function SectionContent({ section, lang }: { section: any; lang?: string }) {
               </div>
               <span className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
+            {item.department && (
+              <p className="text-sm text-zinc-600">{lang === 'zh' ? '部门：' : 'Department: '}{item.department}</p>
+            )}
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
               <p className="mt-0.5 text-xs text-zinc-400">{lang === 'zh' ? '技术栈' : 'Tech'}: {item.technologies.join(', ')}</p>
@@ -98,6 +100,20 @@ function SectionContent({ section, lang }: { section: any; lang?: string }) {
                   <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
+            )}
+            {item.projects?.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {item.projects.map((proj: any) => (
+                  <div key={proj.id}>
+                    <p className="font-semibold text-zinc-800 text-sm">{proj.name}</p>
+                    <ul className="mt-1 list-disc pl-4">
+                      {proj.highlights.map((h: string, i: number) => (
+                        <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}
@@ -120,6 +136,7 @@ function SectionContent({ section, lang }: { section: any; lang?: string }) {
               <span className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</span>
             </div>
             {item.gpa && <p className="text-sm text-zinc-500">GPA: {item.gpa}</p>}
+            {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
                 {item.highlights.map((h: string, i: number) => (

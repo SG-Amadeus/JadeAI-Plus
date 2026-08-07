@@ -1,4 +1,3 @@
-'use client';
 
 import type {
   Resume,
@@ -21,7 +20,7 @@ export function AtsTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((s) => s.type === 'personal_info');
   const pi = (personalInfo?.content || {}) as PersonalInfoContent;
 
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const contacts = [pi.phone, pi.email, pi.gender, pi.age, pi.ethnicity, pi.politicalStatus, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.wechat, pi.location, pi.website].filter(Boolean);
 
   return (
     <div className="mx-auto max-w-[210mm] bg-white shadow-lg" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
@@ -90,6 +89,9 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
               </div>
               <span className="shrink-0 text-sm text-zinc-600">{item.startDate} - {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
+            {item.department && (
+              <p className="text-sm text-zinc-700">{resume.language === 'zh' ? '部门：' : 'Department: '}{item.department}</p>
+            )}
             {item.description && <p className="mt-0.5 text-sm text-zinc-700" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
               <p className="text-sm text-zinc-600">{resume.language === 'zh' ? '技术栈' : 'Technologies'}: {item.technologies.join(', ')}</p>
@@ -100,6 +102,20 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
                   <li key={i} className="text-sm text-zinc-700" dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
+            )}
+            {item.projects?.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {item.projects.map((proj: any) => (
+                  <div key={proj.id}>
+                    <p className="text-sm font-bold text-black">{proj.name}</p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {proj.highlights.map((h: string, i: number) => (
+                        <li key={i} className="text-sm text-zinc-700" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}
@@ -122,6 +138,7 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
               <span className="shrink-0 text-sm text-zinc-600">{item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
             {item.gpa && <p className="text-sm text-zinc-600">GPA: {item.gpa}</p>}
+            {item.description && <p className="mt-1 text-sm text-zinc-700" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-5">
                 {item.highlights.map((h: string, i: number) => (
