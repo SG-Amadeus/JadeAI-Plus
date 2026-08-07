@@ -11,13 +11,6 @@ export interface CliErrorResult {
 
 export type CliOutput<T = unknown> = CliResult<T> | CliErrorResult;
 
-export interface CommandDef {
-  path: string[];
-  help: string;
-  usage: string;
-  run: (args: ParsedArgs) => Promise<unknown>;
-}
-
 export interface ParsedArgs {
   /** Positional arguments: command sub-path tokens */
   positionals: string[];
@@ -39,4 +32,4 @@ export interface JadeClientOpts {
   fingerprint: string;
 }
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';

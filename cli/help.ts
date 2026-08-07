@@ -250,6 +250,133 @@ Options:
   --order <ids>   Comma-separated section ids in desired order (required)
   --json          Machine-readable output`,
 
+  'resume list': `List all resumes (roots and derivatives).
+
+Usage: jadeai resume list [options]
+
+Options:
+  --json   Machine-readable output
+
+Returns an array of {id, title, parentId?} objects.`,
+
+  'resume update': `Update resume metadata (title, template, theme).
+
+Usage: jadeai resume update <resume-id> [options]
+
+Options:
+  --title <t>          New title
+  --template <id>      New template id
+  --theme <json-file>  Partial ThemeConfig JSON file
+  --json               Machine-readable output
+
+At least one of --title, --template, or --theme is required.
+--theme accepts a partial config — only include fields to change.`,
+
+  'resume duplicate': `Duplicate a resume.
+
+Usage: jadeai resume duplicate <resume-id> [options]
+
+Options:
+  --title <t>   Title for the copy (default: "<original-title> (副本)")
+  --json        Machine-readable output`,
+
+  'resume delete': `Delete a resume.
+
+Usage: jadeai resume delete <resume-id> [options]
+
+Options:
+  --force   Cascade-delete all derivatives (required if resume has children)
+  --json    Machine-readable output
+
+Returns 409 if the resume has derivatives and --force is not set.`,
+
+  'resume parse': `Parse a PDF or image file into a new resume.
+
+Usage: jadeai resume parse <file> [options]
+
+Options:
+  --template <id>    Template id (default: classic)
+  --language zh|en   Content language (default: zh)
+  --json             Machine-readable output
+
+Parses the file server-side via mupdf. Returns the created resume id.`,
+
+  'section list': `List all sections of a resume.
+
+Usage: jadeai section list <resume-id> [options]
+
+Options:
+  --json   Machine-readable output
+
+Returns an array of {id, type, title, visible} objects.`,
+
+  'section update': `Update a section's title, visibility, or content.
+
+Usage: jadeai section update <resume-id> <section-id> [options]
+
+Options:
+  --title <t>             New section title
+  --visible true|false    Show or hide the section
+  --content <json-file>   JSON file with new content object
+  --json                  Machine-readable output
+
+At least one of --title, --visible, or --content is required.
+--visible false is the sanctioned way to hide a section (prefer over --delete).`,
+
+  'section add': `Add a new section to a resume.
+
+Usage: jadeai section add <resume-id> --type <type> --title <t> [options]
+
+Options:
+  --type <type>        Section type (work_experience, education, skills, projects, etc.)
+  --title <t>          Section title (required)
+  --content <json-file> JSON file with initial content (optional)
+  --json               Machine-readable output`,
+
+  'section delete': `Delete a section from a resume.
+
+Usage: jadeai section delete <resume-id> <section-id> [options]
+
+Options:
+  --json   Machine-readable output
+
+Irreversible — prefer --visible false over deletion when possible.`,
+
+  'item update': `Update a single item within a section.
+
+Usage: jadeai item update <resume-id> <section-id> <item-id> --fields <json|@file>
+
+Options:
+  --fields '{"key":"value"}'   Inline JSON with fields to merge
+  --fields @path/to/file.json   Read fields from file
+  --json                        Machine-readable output
+
+Partial merge — only include fields you want to change.`,
+
+  'item reorder': `Reorder items within a section.
+
+Usage: jadeai item reorder <resume-id> <section-id> --order <id,id,...>
+
+Options:
+  --order <id,id,...>   Comma-separated item ids in desired order (required)
+  --json                Machine-readable output`,
+
+  'item add': `Add an item to a section.
+
+Usage: jadeai item add <resume-id> <section-id> --item <json|@file>
+
+Options:
+  --item '{"key":"value"}'   Inline JSON with item data
+  --item @path/to/file.json   Read item from file
+  --json                      Machine-readable output`,
+
+  'item delete': `Delete an item from a section.
+
+Usage: jadeai item delete <resume-id> <section-id> <item-id> [options]
+
+Options:
+  --json   Machine-readable output`,
+
 };
 
 export function getHelp(path: string): string {

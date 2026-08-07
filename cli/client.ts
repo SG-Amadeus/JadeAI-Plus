@@ -87,6 +87,7 @@ export class JadeClient {
         const errBody = await res.json();
         if (errBody.error) msg = errBody.error;
       } catch { /* ignore */ }
+      if (res.status === 401) msg += ' (check JADEAI_FINGERPRINT)';
       throw apiError(msg, res.status);
     }
 
@@ -100,42 +101,4 @@ export class JadeClient {
     };
   }
 
-  /** Stream NDJSON lines from a response. Calls onLine for each parsed JSON object. */
-  async streamNdjson(path: string, body: unknown, onLine: (obj: Record<string, unknown>) => void): Promise<void> {
-    const url = `${this.baseUrl}${path}`;
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-fingerprint': this.fingerprint,
-        },
-        body: JSON.stringify(body),
-      });
-    } catch (err: any) {
-      throw networkError(`Cannot reach ${url}: ${err.message || err}`);
-    }
-
-    if (!res.ok) {
-      let msg = `POST ${path} → ${res.status}`;
-      try {
-        const errBody = await res.json();
-        if (errBody.error) msg = errBody.error;
-      } catch { /* ignore */ }
-      if (res.status === 401) msg += ' (check JADEAI_FINGERPRINT)';
-      throw apiError(msg, res.status);
-    }
-
-    const text = await res.text();
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      try {
-        onLine(JSON.parse(trimmed));
-      } catch {
-        // skip malformed lines
-      }
-    }
-  }
 }

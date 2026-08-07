@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 import { JadeClient } from '../client';
 import { Output } from '../output';
 import { usageError } from '../errors';
+import { writeOutput } from './util';
 import type { ParsedArgs } from '../types';
 
 interface Section {
@@ -28,7 +29,7 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
   for (const section of resume.sections) {
     if (section.inherited) continue; // skip inherited personal_info on derivatives
     const file = resolve(dir, `${section.type}.json`);
-    writeFileSync(file, JSON.stringify(section.content, null, 2));
+    writeOutput(JSON.stringify(section.content, null, 2), file);
     out.progress(`Wrote ${section.type}.json`);
     count++;
   }

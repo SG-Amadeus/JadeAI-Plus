@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { resolve, basename } from 'path';
 import { JadeClient } from '../client';
 import { Output } from '../output';
 import { usageError } from '../errors';
+import { readJsonFile } from './util';
 import type { ParsedArgs } from '../types';
 
 interface Section {
@@ -41,7 +42,7 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
       continue;
     }
 
-    const content = JSON.parse(readFileSync(resolve(dir, file), 'utf-8'));
+    const content = readJsonFile(resolve(dir, file));
     await client.put(`/api/resume/${id}/sections/${sid}`, { content });
     out.progress(`Updated ${type}`);
     count++;

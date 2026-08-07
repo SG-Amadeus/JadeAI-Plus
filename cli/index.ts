@@ -77,7 +77,6 @@ function parseArgs(argv: string[]): ParsedArgs {
   const positionals: string[] = [];
   const flags: Record<string, string | boolean> = {};
   let help = false;
-  const repeatable: Record<string, number> = {};
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -111,16 +110,7 @@ function parseArgs(argv: string[]): ParsedArgs {
           val = argv[++i];
         }
       }
-      // Support repeatable flags: --section a --section b → section.0, section.1
-      if (flags[key] !== undefined) {
-        const idx = repeatable[key] || 0;
-        flags[`${key}.${idx}`] = flags[key];
-        delete flags[key];
-        flags[key] = val;
-        repeatable[key] = idx + 1;
-      } else {
-        flags[key] = val;
-      }
+      flags[key] = val;
     } else {
       positionals.push(arg);
     }

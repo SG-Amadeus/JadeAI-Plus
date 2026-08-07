@@ -41,8 +41,16 @@ export async function resumeList(client: JadeClient, out: Output, _args: ParsedA
 export async function resumeShow(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
   if (!id) throw usageError('resume-id is required');
-  const data = await client.get<{ id: string; title: string; parentId?: string | null }>(`/api/resume/${id}`);
-  out.result(data);
+  const data = await client.get<{ id: string; title: string; parentId?: string | null; sections?: Array<{ id: string; type: string }> }>(`/api/resume/${id}`);
+
+  const sectionFilter = args.flags.section as string | undefined;
+  if (sectionFilter && data.sections) {
+    const section = data.sections.find((s: { id: string; type: string }) => s.id === sectionFilter || s.type === sectionFilter);
+    if (!section) throw usageError(`Section not found: ${sectionFilter}`);
+    out.result(section);
+  } else {
+    out.result(data);
+  }
 }
 
 // ── derive ──
@@ -84,6 +92,7 @@ export async function resumeExport(client: JadeClient, out: Output, args: Parsed
   const { data: buf, filename } = await client.fetchBlob(`/api/resume/${id}/export?${params}`);
   const outFile = (args.flags.out as string | undefined) || filename;
   writeOutput(buf, outFile);
+  out.result({ file: outFile, format, size: buf.length });
   out.success(`Exported to ${outFile}`);
 }
 

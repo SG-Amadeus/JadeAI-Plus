@@ -11,11 +11,16 @@ export async function itemUpdate(client: JadeClient, out: Output, args: ParsedAr
   if (!id || !sid || !iid) throw usageError('resume-id, section-id, and item-id are required');
 
   const fieldsFlag = args.flags.fields as string;
-  if (!fieldsFlag) throw usageError('--fields \'{"key":"value"}\' or --fields <json-file> is required');
+  if (!fieldsFlag) throw usageError('--fields \'{"key":"value"}\' or --fields @file.json is required');
 
-  const fields = fieldsFlag.startsWith('{')
-    ? JSON.parse(fieldsFlag)
-    : readJsonFile(fieldsFlag);
+  let fields: Record<string, unknown>;
+  try {
+    fields = fieldsFlag.startsWith('{')
+      ? JSON.parse(fieldsFlag)
+      : readJsonFile(fieldsFlag);
+  } catch {
+    throw usageError('Invalid JSON in --fields. Use inline JSON or @path/to/file.json');
+  }
 
   const data = await client.put(`/api/resume/${id}/sections/${sid}/items/${iid}`, { fields });
   out.result(data);
@@ -41,11 +46,16 @@ export async function itemAdd(client: JadeClient, out: Output, args: ParsedArgs)
   const sid = args.positionals[3];
   if (!id || !sid) throw usageError('resume-id and section-id are required');
   const itemFlag = args.flags.item as string;
-  if (!itemFlag) throw usageError('--item \'{"key":"value"}\' or --item <json-file> is required');
+  if (!itemFlag) throw usageError('--item \'{"key":"value"}\' or --item @file.json is required');
 
-  const item = itemFlag.startsWith('{')
-    ? JSON.parse(itemFlag)
-    : readJsonFile(itemFlag);
+  let item: Record<string, unknown>;
+  try {
+    item = itemFlag.startsWith('{')
+      ? JSON.parse(itemFlag)
+      : readJsonFile(itemFlag);
+  } catch {
+    throw usageError('Invalid JSON in --item. Use inline JSON or @path/to/file.json');
+  }
 
   const data = await client.post(`/api/resume/${id}/sections/${sid}/items`, item);
   out.result(data);
