@@ -214,7 +214,7 @@ Options:
   --json                           Machine-readable output
 
 Examples:
-  jadeai experience create --type work --data '{"company":"Acme","position":"Engineer"}'
+  jadeai experience create --type work --data '{"company":"Acme","position":"Engineer","department":"Platform","location":"Beijing","startDate":"2023-01","current":false,"summary":"...","technologies":["Go"],"highlights":[],"projects":[{"name":"Sub-project","highlights":[]}]}'
   jadeai experience create --type project --data @./project.json`,
 
   'experience update': `Update an experience entry (partial merge).

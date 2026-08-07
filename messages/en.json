@@ -701,12 +701,11 @@
       "dashboard": "Dashboard"
     },
     "hero": {
-      "title": "Build Your Perfect Resume with AI",
-      "subtitle": "Just share your experience — AI optimizes the rest. Your personal info stays secure behind a codename, never exposed to AI.",
+      "title": "Your Career Journey, All in One Place",
+      "subtitle": "Powerful tools to make resume building efficient and professional",
       "cta": "Create Personal Profile",
       "secondaryCta": "View Templates",
-      "experiencesCta": "Experience Library",
-      "privacyNote": "Your personal information (name, phone, email, etc.) is stored securely under a codename (e.g. \"amadeus\"). AI cannot read it — ever. When creating a resume, just tell the AI which codename to use, and the profile auto-fills via encryption without AI ever touching the data. From now on, only share your experience with AI — your privacy is guaranteed."
+      "experiencesCta": "Experience Library"
     },
     "features": {
       "title": "Everything You Need to Land the Job",

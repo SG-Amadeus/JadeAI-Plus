@@ -87,7 +87,15 @@ export async function POST(request: NextRequest) {
     function stripIds(items: Record<string, unknown>[]): Record<string, unknown>[] {
       return items.map((item) => {
         const { id, ...rest } = item;
-        return { ...rest, id: crypto.randomUUID() } as Record<string, unknown>;
+        const cleaned: Record<string, unknown> = { ...rest, id: crypto.randomUUID() };
+        // Recursively inject IDs into nested sub-projects
+        if (Array.isArray(cleaned.projects)) {
+          cleaned.projects = (cleaned.projects as Record<string, unknown>[]).map((p) => {
+            const { id: _pid, ...prest } = p;
+            return { ...prest, id: crypto.randomUUID() };
+          });
+        }
+        return cleaned;
       });
     }
 

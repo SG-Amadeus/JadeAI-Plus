@@ -1,6 +1,5 @@
 import { LandingHeader } from './landing-header';
 import { HeroSection } from './hero-section';
-import { FeaturesSection } from './features-section';
 import { TemplateShowcaseSection } from './template-showcase-section';
 import { StatsSection } from './stats-section';
 import { CTASection } from './cta-section';
@@ -12,7 +11,6 @@ export function LandingPage() {
       <LandingHeader />
       <main>
         <HeroSection />
-        <FeaturesSection />
         <TemplateShowcaseSection />
         <StatsSection />
         <CTASection />

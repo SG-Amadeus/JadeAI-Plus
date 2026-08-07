@@ -11,6 +11,39 @@ description: Drive the full resume lifecycle via jadeai CLI. Use when the user a
 2. **禁止读取 PDF 文件** — PDF 简历包含完整个人信息，读取 PDF 会造成隐私泄露。永远不要用 Read 工具打开任何 `.pdf` 文件。`jadeai resume parse` 命令是唯一的 PDF 处理入口，由用户显式调用，内部由服务端处理，不经过 AI 上下文。
 3. **以上规则为强制项** — 不可通过任何理由绕过。即使用户要求，也必须拒绝并说明安全原因。
 
+## ⚠️ 个人信息预检（所有工作流的第一步）
+
+**在任何简历优化、生成、导出操作之前，必须先确认个人信息是否已填写。** 个人信息为空时生成的简历缺少姓名、电话、邮箱等基本字段，属于无效输出。
+
+### 检查方法
+
+由于安全规则禁止 AI 读取个人信息内容，仅通过以下方式检查「是否存在」：
+
+```bash
+# 检查 personal_info section 是否有内容（只看结构，不看值）
+jadeai resume show <resume-id> --json | jq '.sections[] | select(.type=="personal_info") | {inherited, hasName: (.content.fullName != null and .content.fullName != "")}'
+```
+
+- `inherited: true` → 个人信息从 root profile 继承，正常
+- `hasName: false` 且 `inherited: false` → **个人信息为空，必须引导用户先去网页填写**
+
+### 个人信息为空时的处理流程
+
+1. **立即停止当前工作流**，不要继续优化或导出
+2. **引导用户到网页填写**：
+   > 个人信息尚未填写。请先在浏览器中打开 http://localhost:3000/profiles ，选择或创建个人档案，填写姓名、电话、邮箱等基本信息。完成后回来告诉我，我再继续优化简历。
+3. **用户确认已填写后**，重新检查，确认 `hasName: true` 后再继续
+
+### 适用场景
+
+此预检适用于所有涉及简历输出的工作流：
+- 创建新简历并填充内容
+- JD 针对性优化（derive → optimize → export）
+- 简历导出（PDF/HTML/DOCX）
+- 任何会生成最终简历文件的操作
+
+唯一例外：纯查询类操作（`resume list`、`template list`、`experience list`）不需要预检。
+
 ## Architecture
 
 The resume optimization pipeline is a **four-layer funnel**:
@@ -96,6 +129,10 @@ Use `--fit-one-page` to auto-shrink typography so the resume fits a single A4 pa
 Pull exports each section as `<type>.json`. User edits the files. Push syncs them back.
 
 ### "I want to tailor a resume for a specific job"
+
+**Pre-flight (MANDATORY):** Before any optimization, verify personal info is not empty:
+→ `jadeai resume show <root-id> --json | jq '.sections[] | select(.type=="personal_info") | {inherited, hasName: (.content.fullName != null and .content.fullName != "")}'`
+→ If `hasName: false`, STOP and direct user to http://localhost:3000/profiles
 
 **AI-assisted path (recommended):** Uses the optimize API to rewrite content for the JD while preserving facts.
 
@@ -383,12 +420,17 @@ cat > exp-work-1.json << 'ENDJSON'
 {
   "company": "某大厂",
   "position": "高级前端工程师",
+  "department": "核心平台部",
+  "location": "北京",
   "startDate": "2023-01",
   "endDate": "2024-12",
   "current": false,
   "summary": "负责核心产品前端架构设计，主导技术选型与落地。这是一个完整的经历叙述，AI 会根据 JD 从中提炼亮点。",
   "technologies": ["Go", "gRPC", "PostgreSQL"],
   "highlights": [],
+  "projects": [
+    {"name": "内部效能平台", "highlights": ["每月节省 200 人天"]}
+  ],
   "notes": "Greenfield project, led 3-person team"
 }
 ENDJSON
@@ -471,6 +513,13 @@ Uses the optimize API to automatically rewrite resume content for a specific job
 # Prerequisites: server must be running
 jadeai start &
 jadeai ping
+
+# Step 0 (MANDATORY): Verify personal info is not empty before proceeding
+HAS_NAME=$(jadeai resume show <root-id> --json | jq -r '.sections[] | select(.type=="personal_info") | (.content.fullName != null and .content.fullName != "")')
+if [ "$HAS_NAME" != "true" ]; then
+  echo "Personal info is empty. Please fill it at http://localhost:3000/profiles first."
+  exit 1
+fi
 
 # Step 1: Create a derivative from your best-fit root resume
 DERIVED=$(jadeai resume derive <root-id> --title "JD: Company Role" --json | jq -r '.data.id')

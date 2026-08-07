@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { Sparkles, Shield, Library } from 'lucide-react';
+import { Sparkles, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TemplateThumbnail } from '@/components/dashboard/template-thumbnail';
@@ -70,14 +70,6 @@ export function HeroSection() {
           >
             <Link href="/templates">{t('secondaryCta')}</Link>
           </Button>
-        </div>
-
-        {/* Privacy notice */}
-        <div className="mx-auto mt-6 flex max-w-xl items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left dark:border-green-800 dark:bg-green-950/30">
-          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
-          <p className="text-sm text-green-800 dark:text-green-200">
-            {t('privacyNote')}
-          </p>
         </div>
 
         {/* Floating template cards */}
