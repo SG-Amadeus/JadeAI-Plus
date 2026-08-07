@@ -234,10 +234,10 @@ function bodyPara(text: string, theme: DocxTheme, extra?: { before?: number; aft
   });
 }
 
-function bullet(text: string, theme: DocxTheme): Paragraph {
+function bullet(text: string, theme: DocxTheme, level = 0): Paragraph {
   return new Paragraph({
     children: [run(text, theme)],
-    bullet: { level: 0 },
+    bullet: { level },
     spacing: { line: theme.lineSpacing, after: 40 },
   });
 }
@@ -532,6 +532,14 @@ function buildWorkExperience(c: WorkExperienceContent, title: string, theme: Doc
       }));
     }
 
+    if (item.department) {
+      itemChildren.push(new Paragraph({
+        children: [run(`Department: ${safe(item.department)}`, theme, { color: '71717a', size: theme.bodySize - 2 })],
+        indent: { left: 240 },
+        spacing: { before: 40, after: 60 },
+      }));
+    }
+
     if (item.description) itemChildren.push(bodyPara(item.description, theme, { before: 40, after: 40 }));
 
     if (item.technologies?.length) {
@@ -545,6 +553,16 @@ function buildWorkExperience(c: WorkExperienceContent, title: string, theme: Doc
     }
 
     for (const h of item.highlights || []) { if (h) itemChildren.push(bullet(h, theme)); }
+
+    for (const p of item.projects || []) {
+      if (!p?.name && !p?.highlights?.length) continue;
+      itemChildren.push(new Paragraph({
+        children: [run(safe(p.name), theme, { bold: true, size: theme.bodySize - 1, color: '666666' })],
+        indent: { left: 240 },
+        spacing: { before: 40, after: 40 },
+      }));
+      for (const h of p.highlights || []) { if (h) itemChildren.push(bullet(h, theme, 1)); }
+    }
 
     res.push(...wrapItem(itemChildren, theme.accent, theme.itemBorder));
   }

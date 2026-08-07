@@ -56,9 +56,17 @@ export function generatePlainText(resume: ResumeWithSections): string {
           lines.push(`- ${safe(item.position)} at ${safe(item.company)}`);
           const dateRange = item.current ? `${safe(item.startDate)} - Present` : `${safe(item.startDate)} - ${safe(item.endDate)}`;
           lines.push(`  ${dateRange}${item.location ? ` | ${item.location}` : ''}`);
+          if (item.department) lines.push(`  Department: ${item.department}`);
           if (item.description) lines.push(`  ${item.description}`);
           for (const h of item.highlights || []) {
             if (h) lines.push(`  * ${h}`);
+          }
+          for (const p of item.projects || []) {
+            if (!p?.name && !p?.highlights?.length) continue;
+            lines.push(`  Project: ${safe(p.name)}`);
+            for (const h of p.highlights || []) {
+              if (h) lines.push(`    * ${h}`);
+            }
           }
         }
         lines.push('');

@@ -17,15 +17,18 @@ export function buildClassicSectionContent(section: Section, lang: string = 'en'
   if (section.type === 'work_experience') {
     return `<div class="space-y-3">${((c as WorkExperienceContent).items || []).map((it: any) => `<div>
       <div class="flex items-baseline justify-between"><div><span class="font-semibold text-zinc-800 text-sm">${esc(it.position)}</span>${it.company ? `<span class="text-sm text-zinc-600"> at ${esc(it.company)}</span>` : ''}${it.location ? `<span class="text-sm text-zinc-400"> , ${esc(it.location)}</span>` : ''}</div><span class="text-xs text-zinc-400">${esc(it.startDate)} - ${esc(it.endDate) || (it.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span></div>
+      ${it.department ? `<p class="mt-0.5 text-sm text-zinc-600"><span class="font-semibold text-zinc-800">${lang === 'zh' ? '部门：' : 'Department: '}</span>${esc(it.department)}</p>` : ''}
       ${it.description ? `<div class="mt-1 text-sm text-zinc-600">${md(it.description)}</div>` : ''}
       ${it.technologies?.length ? `<p class="mt-0.5 text-xs text-zinc-400">${lang === 'zh' ? '技术栈' : 'Tech'}: ${esc(it.technologies.join(', '))}</p>` : ''}
       ${it.highlights?.length ? `<ul class="mt-1 list-disc pl-4">${buildHighlights(it.highlights, 'text-sm text-zinc-600')}</ul>` : ''}
+      ${it.projects?.length ? `<div class="mt-1 space-y-1">${it.projects.map((proj: any) => `<div><p class="text-sm font-semibold text-zinc-800">${esc(proj.name)}</p>${proj.highlights?.length ? `<ul class="mt-0.5 list-disc pl-4">${buildHighlights(proj.highlights, 'text-sm text-zinc-600')}</ul>` : ''}</div>`).join('')}</div>` : ''}
     </div>`).join('')}</div>`;
   }
   if (section.type === 'education') {
     return `<div class="space-y-3">${((c as EducationContent).items || []).map((it: any) => `<div>
       <div class="flex items-baseline justify-between"><div><span class="font-semibold text-zinc-800 text-sm">${esc(degreeField(it.degree, it.field))}</span>${it.institution ? `<span class="text-sm text-zinc-600"> - ${esc(it.institution)}</span>` : ''}${it.location ? `<span class="text-sm text-zinc-400"> , ${esc(it.location)}</span>` : ''}</div><span class="text-xs text-zinc-400">${esc(it.startDate)} - ${esc(it.endDate) || (lang === 'zh' ? '至今' : 'Present')}</span></div>
       ${it.gpa ? `<p class="text-sm text-zinc-500">GPA: ${esc(it.gpa)}</p>` : ''}
+      ${it.description ? `<p class="mt-1 text-sm text-zinc-600">${md(it.description)}</p>` : ''}
       ${it.highlights?.length ? `<ul class="mt-1 list-disc pl-4">${buildHighlights(it.highlights, 'text-sm text-zinc-600')}</ul>` : ''}
     </div>`).join('')}</div>`;
   }
@@ -75,7 +78,7 @@ export function buildClassicSectionContent(section: Section, lang: string = 'en'
 export function buildClassicHtml(resume: ResumeWithSections): string {
   const pi = getPersonalInfo(resume);
   const sections = visibleSections(resume);
-  const contacts = [pi.age, pi.politicalStatus, pi.gender, pi.ethnicity, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.email, pi.phone, pi.wechat, pi.location, pi.website].filter(Boolean);
+  const contacts = [pi.phone, pi.email, pi.gender, pi.age, pi.ethnicity, pi.politicalStatus, pi.hometown, pi.maritalStatus, pi.yearsOfExperience, pi.educationLevel, pi.wechat, pi.location, pi.website].filter(Boolean);
 
   return `<div class="mx-auto max-w-[210mm] bg-white shadow-lg" style="font-family:Inter,sans-serif">
     <div class="mb-6 border-b-2 border-zinc-800 pb-4">

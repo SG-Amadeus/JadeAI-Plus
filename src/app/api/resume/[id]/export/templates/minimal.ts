@@ -18,9 +18,11 @@ function buildMinimalSectionContent(section: Section, lang: string = 'en'): stri
     return `<div class="space-y-4">${((c as WorkExperienceContent).items || []).map((it: any) => `<div>
       <p class="text-sm"><span class="font-medium text-zinc-800">${esc(it.position)}</span>${it.company ? ` <span class="text-zinc-500">/ ${esc(it.company)}</span>` : ''}</p>
       <p class="text-xs text-zinc-400">${esc(it.startDate)} - ${esc(it.endDate) || (it.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</p>
+      ${it.department ? `<p class="mt-0.5 text-sm text-zinc-600"><span class="font-semibold text-zinc-800">${lang === 'zh' ? '部门：' : 'Department: '}</span>${esc(it.department)}</p>` : ''}
       ${it.description ? `<div class="mt-1 text-sm text-zinc-600">${md(it.description)}</div>` : ''}
       ${it.technologies?.length ? `<p class="mt-0.5 text-xs text-zinc-400">${esc(it.technologies.join(' / '))}</p>` : ''}
       ${it.highlights?.length ? `<ul class="mt-1 list-disc pl-4">${buildHighlights(it.highlights, 'text-sm text-zinc-500')}</ul>` : ''}
+      ${it.projects?.length ? `<div class="mt-1 space-y-1">${it.projects.map((proj: any) => `<div><p class="text-sm font-medium text-zinc-800">${esc(proj.name)}</p>${proj.highlights?.length ? `<ul class="mt-0.5 list-disc pl-4">${buildHighlights(proj.highlights, 'text-sm text-zinc-500')}</ul>` : ''}</div>`).join('')}</div>` : ''}
     </div>`).join('')}</div>`;
   }
   if (section.type === 'education') {
@@ -29,6 +31,7 @@ function buildMinimalSectionContent(section: Section, lang: string = 'en'): stri
       <p class="text-sm text-zinc-600">${esc(degreeField(it.degree, it.field))}</p>
       <p class="text-xs text-zinc-400">${esc(it.startDate)} - ${esc(it.endDate) || (lang === 'zh' ? '至今' : 'Present')}</p>
       ${it.gpa ? `<p class="text-xs text-zinc-400">GPA: ${esc(it.gpa)}</p>` : ''}
+      ${it.description ? `<p class="mt-1 text-sm text-zinc-500">${md(it.description)}</p>` : ''}
       ${it.highlights?.length ? `<ul class="mt-1 list-disc pl-4">${buildHighlights(it.highlights, 'text-sm text-zinc-500')}</ul>` : ''}
     </div>`).join('')}</div>`;
   }
@@ -87,16 +90,16 @@ export function buildMinimalHtml(resume: ResumeWithSections): string {
           <h1 class="text-xl font-medium text-zinc-900">${esc(pi.fullName || 'Your Name')}</h1>
           <div class="mt-1 flex flex-wrap gap-3 text-sm text-zinc-500">
             ${pi.jobTitle ? `<span>${esc(pi.jobTitle)}</span>` : ''}
-            ${pi.age ? `<span>${esc(pi.age)}</span>` : ''}
-            ${pi.politicalStatus ? `<span>${esc(pi.politicalStatus)}</span>` : ''}
+            ${pi.phone ? `<span>${esc(pi.phone)}</span>` : ''}
+            ${pi.email ? `<span>${esc(pi.email)}</span>` : ''}
             ${pi.gender ? `<span>${esc(pi.gender)}</span>` : ''}
+            ${pi.age ? `<span>${esc(pi.age)}</span>` : ''}
             ${pi.ethnicity ? `<span>${esc(pi.ethnicity)}</span>` : ''}
+            ${pi.politicalStatus ? `<span>${esc(pi.politicalStatus)}</span>` : ''}
             ${pi.hometown ? `<span>${esc(pi.hometown)}</span>` : ''}
             ${pi.maritalStatus ? `<span>${esc(pi.maritalStatus)}</span>` : ''}
             ${pi.yearsOfExperience ? `<span>${esc(pi.yearsOfExperience)}</span>` : ''}
             ${pi.educationLevel ? `<span>${esc(pi.educationLevel)}</span>` : ''}
-            ${pi.email ? `<span>${esc(pi.email)}</span>` : ''}
-            ${pi.phone ? `<span>${esc(pi.phone)}</span>` : ''}
             ${pi.wechat ? `<span>${esc(pi.wechat)}</span>` : ''}
             ${pi.location ? `<span>${esc(pi.location)}</span>` : ''}
             ${pi.linkedin ? `<span>LinkedIn: ${esc(pi.linkedin)}</span>` : ''}
