@@ -106,7 +106,7 @@ export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) 
         headers: getHeaders(),
         body: JSON.stringify({
           title: data.title || 'Imported Resume',
-          template: data.template || 'classic',
+          template: data.template || 'minimal-blue',
           themeConfig: data.themeConfig,
           sections: data.sections,
         }),

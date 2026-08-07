@@ -10,7 +10,7 @@ import type { ParsedArgs } from '../types';
 export async function resumeCreate(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const title = args.flags.title as string;
   if (!title) throw usageError('--title is required');
-  const template = (args.flags.template as string) || 'classic';
+  const template = (args.flags.template as string) || 'minimal-blue';
   const language = (args.flags.language as string) || 'zh';
   const profileCodename = args.flags.profile as string | undefined;
   const sectionsFile = args.flags.sections as string | undefined;

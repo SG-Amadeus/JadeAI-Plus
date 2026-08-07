@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const resume = await resumeRepository.create({
       userId: user.id,
       title: title || '未命名简历',
-      template: template || 'classic',
+      template: template || 'minimal-blue',
       language: language || 'zh',
       ...(themeConfig ? { themeConfig } : {}),
     });

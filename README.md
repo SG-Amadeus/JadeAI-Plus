@@ -57,6 +57,38 @@ Root (personal_info + detailed experiences)
 
 All AI endpoints filter inherited sections before passing data to AI models. Personal info (name, email, phone) stored on root resumes is never exposed to AI — regardless of whether called via CLI or Web UI.
 
+### JD-Tailored Resume with AI Optimization
+
+A 3-step workflow that generates role-targeted resumes from a root resume and a job description — no manual editing required:
+
+```bash
+# 1. Create a derivative from your root resume
+jadeai resume derive <root-id> --title "JD: Senior FE - Google"
+
+# 2. AI rewrites content for the JD (facts preserved, wording optimized)
+curl -s -X POST http://localhost:3000/api/ai/optimize \
+  -H "Content-Type: application/json" \
+  -H "x-fingerprint: demo-fingerprint" \
+  -H "x-provider: deepseek" \
+  -H "x-api-key: $DEEPSEEK_API_KEY" \
+  -d '{"resumeId":"<derivative-id>","jobDescription":"<paste JD here>"}'
+
+# 3. Export the finished PDF
+jadeai resume export <derivative-id> --format pdf --out ./resume.pdf
+```
+
+- **Fact preservation guarantee** — the optimize API prompt enforces "Do NOT fabricate experience — adapt and emphasize existing content"
+- **PII-safe** — personal info is automatically stripped before reaching the AI model
+- **Batch mode** — run the 3 steps in a `for` loop to generate tailored resumes for multiple JDs simultaneously
+- **Iterative refinement** — re-run the optimize step with adjusted keywords or fine-tune via pull/push
+
+### Template & Export Improvements
+
+- **Preview/PDF pixel-identical rendering** — SSR-based PDF export uses the same React components as the preview tab, eliminating layout drift
+- **Minimal Blue template** — redesigned layout with correct spacing, date right-alignment, project URL display, and single-page PDF output
+- **Work experience enhancements** — department field and nested work projects (sub-projects within a job entry) supported across templates
+- **Education improvements** — description field with inline GPA display, education history pre-fill from profile data
+
 ### Global CLI with Zero Config
 
 ```bash
@@ -190,6 +222,27 @@ cp -r .claude/skills/jadeai ~/.claude/skills/jadeai
 No action needed. Claude Code auto-discovers skills in `.claude/skills/` at the repo root.
 
 After setup, restart Claude Code. The skill activates on prompts like "create a resume", "export my resume to PDF", "tailor my resume for a JD", or "manage my experience library".
+
+### Skills Capabilities
+
+The `jadeai` skill teaches Claude Code to orchestrate the full resume lifecycle. Key workflows:
+
+| Prompt | What Claude Does |
+|--------|-----------------|
+| "Create a resume targeted at this JD" | Parses JD → creates derivative → calls optimize API → exports PDF |
+| "Fit my resume to one page" | Pulls sections → inventories content against template budget → cuts/compresses → pushes → exports with `--fit-one-page` |
+| "Add my internship at X to my experience library" | Creates experience entry via `jadeai experience create` with proper data shape |
+| "Build me a resume from my experience library" | Lists experiences → creates resume with `--experience-ids` → exports |
+| "Fix the spacing in this template" | Reads preview template → identifies layout issues → edits React component → verifies in browser |
+| "Parse this old PDF resume" | Runs `jadeai resume parse` → reviews extracted content → creates editable resume |
+
+The skill includes:
+- **16-step SOP** for JD-to-PDF workflow (JD parsing → experience mapping → budget allocation → execution)
+- **Template-specific line budgets** — per-template typography profiles and section allocation tables for one-page fitting
+- **Writing guidelines** — STAR method, quantified results, action verb libraries for projects and internships
+- **8 workflow recipes** — from basic create-and-fill to multi-JD batch AI optimization
+
+See `.claude/skills/jadeai/SKILL.md` for the full agent workflow reference with decision trees and command contracts.
 
 ## CLI Command Reference
 

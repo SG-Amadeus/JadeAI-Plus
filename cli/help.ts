@@ -111,7 +111,7 @@ Usage: jadeai resume create --title <t> [options]
 
 Options:
   --title <t>          Resume title (required)
-  --template <id>      Template id (default: classic)
+  --template <id>      Template id (default: minimal-blue)
   --language <lang>    Content language: zh|en (default: zh)
   --profile <codename> Personal profile codename to prefill personal_info
   --sections <file>    JSON file with initial sections
@@ -295,7 +295,7 @@ Returns 409 if the resume has derivatives and --force is not set.`,
 Usage: jadeai resume parse <file> [options]
 
 Options:
-  --template <id>    Template id (default: classic)
+  --template <id>    Template id (default: minimal-blue)
   --language zh|en   Content language (default: zh)
   --json             Machine-readable output
 

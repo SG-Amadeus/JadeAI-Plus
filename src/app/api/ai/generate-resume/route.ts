@@ -140,7 +140,7 @@ Respond with JSON only.`;
     const newResume = await resumeRepository.create({
       userId: user.id,
       title: resumeTitle,
-      template: template || 'classic',
+      template: template || 'minimal-blue',
       language: lang,
     });
 

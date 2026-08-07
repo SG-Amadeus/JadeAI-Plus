@@ -40,7 +40,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
   const [skills, setSkills] = useState('');
   const [industry, setIndustry] = useState('');
   const [experience, setExperience] = useState('');
-  const [template, setTemplate] = useState('classic');
+  const [template, setTemplate] = useState('minimal-blue');
   const [language, setLanguage] = useState(locale);
   const [state, setState] = useState<GenerateState>('form');
   const [error, setError] = useState('');
@@ -109,7 +109,7 @@ export function GenerateResumeDialog({ open, onOpenChange, onCreated }: Generate
       setSkills('');
       setIndustry('');
       setExperience('');
-      setTemplate('classic');
+      setTemplate('minimal-blue');
       setLanguage(locale);
       setError('');
       setResult(null);

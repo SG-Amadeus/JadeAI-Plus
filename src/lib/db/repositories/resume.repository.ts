@@ -48,7 +48,7 @@ export const resumeRepository = {
       id,
       userId: data.userId,
       title: data.title || '未命名简历',
-      template: data.template || 'classic',
+      template: data.template || 'minimal-blue',
       language: data.language || 'zh',
     });
     return this.findById(id);

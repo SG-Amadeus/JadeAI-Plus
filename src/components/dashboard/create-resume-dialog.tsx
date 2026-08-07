@@ -81,7 +81,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('template');
   const [title, setTitle] = useState('');
-  const [template, setTemplate] = useState<string>('classic');
+  const [template, setTemplate] = useState<string>('minimal-blue');
   const [profileCodename, setProfileCodename] = useState<string>('');
   const [selectedExperienceIds, setSelectedExperienceIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -162,7 +162,7 @@ export function CreateResumeDialog({ open, onClose, onCreate }: CreateResumeDial
   const resetAndClose = () => {
     onClose();
     setTitle('');
-    setTemplate('classic');
+    setTemplate('minimal-blue');
     setProfileCodename('');
     setSelectedExperienceIds([]);
     setTab('template');

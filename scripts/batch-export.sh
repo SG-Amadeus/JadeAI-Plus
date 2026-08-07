@@ -19,7 +19,7 @@ TEMPLATES=(
 mkdir -p "$OUT_DIR"
 
 # Save original template
-ORIGINAL=$(curl -s -H "x-fingerprint: $FP" "$BASE/api/resume/$RESUME_ID/export?format=json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('template','classic'))" 2>/dev/null)
+ORIGINAL=$(curl -s -H "x-fingerprint: $FP" "$BASE/api/resume/$RESUME_ID/export?format=json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('template','minimal-blue'))" 2>/dev/null)
 echo "Original template: $ORIGINAL"
 echo "Exporting ${#TEMPLATES[@]} templates to $OUT_DIR ..."
 
