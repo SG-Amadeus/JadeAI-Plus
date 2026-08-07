@@ -34,10 +34,17 @@ export interface SummaryContent {
   text: string;
 }
 
+export interface WorkProject {
+  id: string;
+  name: string;
+  highlights: string[];
+}
+
 export interface WorkExperienceItem {
   id: string;
   company: string;
   position: string;
+  department?: string;
   location?: string;
   startDate: string;
   endDate: string | null;
@@ -45,6 +52,7 @@ export interface WorkExperienceItem {
   description: string;
   technologies: string[];
   highlights: string[];
+  projects?: WorkProject[];
 }
 
 export interface WorkExperienceContent {

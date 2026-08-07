@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EditableText } from '../fields/editable-text';
 import { EditableDate } from '../fields/editable-date';
+import { EditableRichText } from '../fields/editable-rich-text';
 import { EditableList } from '../fields/editable-list';
 import { FieldWrapper } from '../fields/field-wrapper';
 import { generateId } from '@/lib/utils';
@@ -29,6 +30,7 @@ export function EducationSection({ section, onUpdate }: Props) {
       field: '',
       startDate: '',
       endDate: '',
+      description: '',
       highlights: [],
     };
     onUpdate({ items: [...items, newItem] } as any);
@@ -67,6 +69,7 @@ export function EducationSection({ section, onUpdate }: Props) {
               <EditableDate label={t('startDate')} value={item.startDate} onChange={(v) => updateItem(index, { startDate: v })} />
               <EditableDate label={t('endDate')} value={item.endDate} onChange={(v) => updateItem(index, { endDate: v })} />
             </FieldWrapper>
+            <EditableRichText label={t('description')} value={item.description || ''} onChange={(v) => updateItem(index, { description: v })} rows={2} />
             <EditableList label={t('highlights')} items={item.highlights} onChange={(v) => updateItem(index, { highlights: v })} />
           </div>
         </div>
