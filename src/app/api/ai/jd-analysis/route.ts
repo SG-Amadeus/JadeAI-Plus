@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
-import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { analysisRepository } from '@/lib/db/repositories/analysis.repository';
 import { jdAnalysisInputSchema, jdAnalysisOutputSchema } from '@/lib/ai/jd-analysis-schema';
 import { extractJson } from '@/lib/ai/extract-json';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 
 const JD_ANALYSIS_PROMPT = `You are an expert resume analyst and career coach. Analyze the match between the provided resume and job description.
 
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { resumeId, jobDescription } = parsed.data;
 
     // Fetch the resume and verify ownership
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) {
       return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
     }
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
+    const resumeContext = JSON.stringify(resume.sections.filter((s: any) => !s.inherited));
     const aiConfig = extractAIConfig(request);
     const model = getModel(aiConfig);
 

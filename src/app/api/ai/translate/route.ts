@@ -3,6 +3,7 @@ import { generateText, type LanguageModel } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError, type AIConfig } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 import { translateInputSchema } from '@/lib/ai/translate-schema';
 import { extractJson } from '@/lib/ai/extract-json';
 import { stripPersonalInfoForAI } from '@/lib/resume/sanitize';
@@ -42,7 +43,7 @@ Rules:
 - Technical terms and programming languages stay in English (e.g., JavaScript, React, AWS)
 - Section titles should use standard resume headings in the target language
 - Preserve the exact JSON structure and all field names — only translate string values
-- Keep all IDs, URLs, emails, phone numbers unchanged
+- Keep all IDs and URLs unchanged
 - CRITICAL: Return a single valid JSON object. No markdown, no code fences, no extra text.`;
 }
 
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     const { resumeId, targetLanguage, sectionIds, mode } = parsed.data;
 
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) {
       return new Response(JSON.stringify({ error: 'Resume not found' }), { status: 404 });
     }

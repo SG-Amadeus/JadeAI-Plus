@@ -40,8 +40,6 @@ describe('sanitizeSectionsForAI', () => {
     const content = result[0].content as Record<string, unknown>;
 
     expect(content.jobTitle).toBe('Senior Engineer');
-    expect(content.location).toBe('Beijing');
-    expect(content.hometown).toBe('Shanghai');
     expect(content.yearsOfExperience).toBe('8');
     expect(content.educationLevel).toBe('Bachelor');
   });
@@ -108,10 +106,10 @@ describe('stripPersonalInfoForAI', () => {
     expect(merged).toEqual(original);
   });
 
-  it('returns empty stripped when no PII fields present', () => {
+  it('strips location as T2 PII', () => {
     const { content, stripped } = stripPersonalInfoForAI({ jobTitle: 'Dev', location: 'NYC' });
-    expect(content).toEqual({ jobTitle: 'Dev', location: 'NYC' });
-    expect(stripped).toEqual({});
+    expect(content).toEqual({ jobTitle: 'Dev' });
+    expect(stripped).toEqual({ location: 'NYC' });
   });
 
   it('handles null/undefined gracefully', () => {

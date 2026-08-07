@@ -3,8 +3,8 @@ import { generateText } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 import { extractJson } from '@/lib/ai/extract-json';
 import { z } from 'zod/v4';
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'resumeId, sectionId, and prompt are required' }, { status: 400 });
     }
 
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
     if (resume.userId !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
     const aiConfig = extractAIConfig(request);
     const model = getModel(aiConfig);
 
-    const sanitized = sanitizeSectionsForAI([section])[0];
     const scopeHint = field
       ? `Only modify the "${field}" field within the section content.`
       : 'Modify the section content as needed.';
@@ -53,7 +52,7 @@ ${scopeHint}
 - Keep IDs, URLs, dates unchanged
 - Match the language of the original content
 - CRITICAL: Return a single valid JSON object with keys: sectionId (string), title (string), content (object). No markdown, no code fences.`,
-      prompt: `## Instruction\n${prompt}\n\n## Section to Rewrite\n${JSON.stringify(sanitized)}\n\nReturn JSON with keys: sectionId, title, content.`,
+      prompt: `## Instruction\n${prompt}\n\n## Section to Rewrite\n${JSON.stringify(section)}\n\nReturn JSON with keys: sectionId, title, content.`,
       providerOptions: getJsonProviderOptions(aiConfig),
     });
 

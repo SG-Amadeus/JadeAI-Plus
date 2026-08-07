@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateText } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
-import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { analysisRepository } from '@/lib/db/repositories/analysis.repository';
 import { grammarCheckInputSchema, grammarCheckOutputSchema } from '@/lib/ai/grammar-check-schema';
 import { extractJson } from '@/lib/ai/extract-json';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 
 const GRAMMAR_CHECK_PROMPT = `You are an expert resume reviewer and writing coach. Analyze the provided resume sections for writing quality issues.
 
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
     const { resumeId, sectionIds } = parsed.data;
 
     // Fetch the resume and verify ownership
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) {
       return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
     }
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare sections data for AI analysis
-    const sectionsData = sanitizeSectionsForAI(sectionsToCheck).map((s: any) => ({
+    const sectionsData = sectionsToCheck.map((s: any) => ({
       sectionId: s.id,
       sectionTitle: s.title,
       type: s.type,

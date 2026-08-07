@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
-import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { analysisRepository } from '@/lib/db/repositories/analysis.repository';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify ownership
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume || resume.userId !== user.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -69,7 +69,7 @@ export async function DELETE(request: NextRequest) {
     if (!analysis) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    const resume = await resumeRepository.findById(analysis.resumeId);
+    const resume = await getResumeForAI(analysis.resumeId);
     if (!resume || resume.userId !== user.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }

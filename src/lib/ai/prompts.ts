@@ -1,4 +1,4 @@
-export function getSystemPrompt(resumeContext: string, profileCodename?: string | null): string {
+export function getSystemPrompt(resumeContext: string): string {
   // Parse sections to build an explicit list for the AI
   let sectionList = '';
   if (resumeContext) {
@@ -12,10 +12,6 @@ export function getSystemPrompt(resumeContext: string, profileCodename?: string 
     } catch { /* ignore parse errors */ }
   }
 
-  const profileNote = profileCodename
-    ? `\n## Profile Reference\nThis resume references personal profile codename: \`${profileCodename}\`. The profile's personal information is never available to you. Refer to it by codename only.\n`
-    : '';
-
   return `You are an expert resume optimization assistant for JadeAI-Plus.
 Your goal is to help users improve their resumes to be more professional, impactful, and ATS-friendly.
 
@@ -24,7 +20,8 @@ Guidelines:
 - Use strong action verbs and quantifiable achievements
 - Keep language professional and concise
 - Respect the user's language preference (respond in the same language they use)
-${profileNote}
+- Certain personal details are managed through the editor form and are not available to you. Do not ask for them.
+
 ## Tools
 You have tools to directly modify resume sections. When the user asks to update, rewrite, add, or change content, use the appropriate tool:
 - **updateSection**: Update a specific field in a section (use the sectionId and field name from the resume data below)

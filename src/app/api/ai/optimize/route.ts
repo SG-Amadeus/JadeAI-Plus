@@ -3,8 +3,8 @@ import { generateText } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 import { extractJson } from '@/lib/ai/extract-json';
 import { z } from 'zod/v4';
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const { resumeId, jobDescription, sectionIds, language } = await request.json();
     if (!resumeId || !jobDescription) return NextResponse.json({ error: 'resumeId and jobDescription are required' }, { status: 400 });
 
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
     if (resume.userId !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
     const targetSections = (sectionIds
       ? resume.sections.filter((s: any) => sectionIds.includes(s.id))
       : resume.sections).filter((s: any) => !s.inherited);
-    const sanitized = sanitizeSectionsForAI(targetSections);
-
     const result = await generateText({
       model,
       maxOutputTokens: 8192,
@@ -52,7 +50,7 @@ Rules:
 - Add quantifiable achievements where JD implies them
 - Do NOT fabricate experience — adapt and emphasize existing content
 - CRITICAL: Return a single valid JSON object with keys: "updatedSections" (array of {sectionId, title, content}) and "summary" (string explaining what was changed). No markdown, no code fences.`,
-      prompt: `## Job Description\n${jobDescription}\n\n## Resume Sections to Optimize\n${JSON.stringify(sanitized)}\n\nOptimize these sections. Return JSON with "updatedSections" and "summary".`,
+      prompt: `## Job Description\n${jobDescription}\n\n## Resume Sections to Optimize\n${JSON.stringify(targetSections)}\n\nOptimize these sections. Return JSON with "updatedSections" and "summary".`,
       providerOptions: getJsonProviderOptions(aiConfig),
     });
 

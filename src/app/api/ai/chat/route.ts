@@ -2,11 +2,10 @@ import { NextRequest } from 'next/server';
 import { streamText, convertToModelMessages, stepCountIs } from 'ai';
 import { getModel, extractAIConfig, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
-import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { chatRepository } from '@/lib/db/repositories/chat.repository';
 import { getSystemPrompt } from '@/lib/ai/prompts';
 import { createExecutableTools } from '@/lib/ai/tools';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 
 const MAX_ROUNDS = 10;
 const MAX_MESSAGES = MAX_ROUNDS * 2; // 10 rounds = 20 messages (user + assistant)
@@ -22,12 +21,10 @@ export async function POST(request: NextRequest) {
     const { messages, resumeId, model: modelId, sessionId } = await request.json();
 
     let resumeContext = '';
-    let profileCodename: string | null = null;
     if (resumeId) {
-      const resume = await resumeRepository.findById(resumeId);
+      const resume = await getResumeForAI(resumeId);
       if (resume) {
-        resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
-        profileCodename = (resume as any).profileCodename || null;
+        resumeContext = JSON.stringify(resume.sections.filter((s: any) => !s.inherited));
       }
     }
 
@@ -65,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const result = streamText({
       model,
-      system: getSystemPrompt(resumeContext, profileCodename),
+      system: getSystemPrompt(resumeContext),
       messages: truncatedMessages,
       tools,
       stopWhen: tools ? stepCountIs(25) : undefined,

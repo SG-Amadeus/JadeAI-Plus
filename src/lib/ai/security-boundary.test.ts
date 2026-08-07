@@ -10,7 +10,7 @@ const AI_DIRS = [
   'src/app/api/interview',
 ];
 
-const FORBIDDEN = [
+const FORBIDDEN_PROFILE = [
   'personal_profiles',
   'personalProfiles',
   'profile.repository',
@@ -18,6 +18,20 @@ const FORBIDDEN = [
   "from '@/lib/db/repositories/profile.repository'",
   './profile.repository',
 ];
+
+const FORBIDDEN_RESUME_REPO = [
+  'resumeRepository.findById',
+  'resumeRepository.findAllByUserId',
+];
+
+// These files return resume data to the user's browser (not to AI models),
+// so they legitimately need resumeRepository.findById for the UI response path.
+// All AI-bound reads in these files still use getResumeForAI().
+const UI_RETURN_FILES = new Set([
+  'src/app/api/ai/fill/route.ts',
+  'src/app/api/ai/translate/route.ts',
+  'src/app/api/ai/generate-resume/route.ts',
+]);
 
 function collectFiles(dir: string): string[] {
   const results: string[] = [];
@@ -48,15 +62,16 @@ describe('AI security boundary', () => {
 
   for (const file of files) {
     const relativePath = file.replace(PROJECT_ROOT + '/', '');
+    const isGetResume = relativePath.endsWith('get-resume.ts');
+    const isUiReturn = UI_RETURN_FILES.has(relativePath);
+
     it(`${relativePath} must not import profile.repository`, () => {
       const content = readFileSync(file, 'utf-8');
-      for (const forbidden of FORBIDDEN) {
+      for (const forbidden of FORBIDDEN_PROFILE) {
         if (content.includes(forbidden)) {
-          // Some patterns are ok in comments/test files
           const lines = content.split('\n');
           for (let i = 0; i < lines.length; i++) {
             if (lines[i].includes(forbidden)) {
-              // Skip if it's in a comment, docstring, or test file
               const trimmed = lines[i].trim();
               if (
                 trimmed.startsWith('//') ||
@@ -74,5 +89,32 @@ describe('AI security boundary', () => {
         }
       }
     });
+
+    if (!isGetResume && !isUiReturn) {
+      it(`${relativePath} must use getResumeForAI instead of resumeRepository directly`, () => {
+        const content = readFileSync(file, 'utf-8');
+        for (const forbidden of FORBIDDEN_RESUME_REPO) {
+          if (content.includes(forbidden)) {
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(forbidden)) {
+                const trimmed = lines[i].trim();
+                if (
+                  trimmed.startsWith('//') ||
+                  trimmed.startsWith('*') ||
+                  trimmed.startsWith('/*') ||
+                  file.endsWith('.test.ts')
+                ) {
+                  continue;
+                }
+                expect.fail(
+                  `${relativePath}:${i + 1} contains forbidden reference "${forbidden}"\n  ${lines[i].trim()}\n\nAI code must use getResumeForAI() from '@/lib/ai/get-resume' instead of calling resumeRepository.findById() directly. getResumeForAI() automatically strips PII from all personal_info sections.`
+                );
+              }
+            }
+          }
+        }
+      });
+    }
   }
 });

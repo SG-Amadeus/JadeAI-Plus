@@ -4,9 +4,9 @@
  * Sensitivity tiers ("分档"):
  *   T1 核心隐私 (never sent): fullName, email, phone, wechat
  *   T2 身份信息 (never sent): website, linkedin, github, customLinks, avatar,
- *                            age, gender, ethnicity, politicalStatus, maritalStatus
- *   T3 专业展示 (sent):       jobTitle, location, hometown, yearsOfExperience,
- *                            educationLevel
+ *                            age, gender, ethnicity, politicalStatus, maritalStatus,
+ *                            location, hometown
+ *   T3 专业展示 (sent):       jobTitle, yearsOfExperience, educationLevel
  *
  * Only the personal_info section is touched; all other sections and section
  * metadata (id/title/type/sortOrder) pass through unchanged. The DB is never
@@ -16,9 +16,10 @@
 export const PII_STRIP_FIELDS: readonly string[] = [
   // T1 — direct identifiers & contact channels
   'fullName', 'email', 'phone', 'wechat',
-  // T2 — profile links, photo, personal attributes
+  // T2 — profile links, photo, personal attributes, geo
   'website', 'linkedin', 'github', 'customLinks', 'avatar',
   'age', 'gender', 'ethnicity', 'politicalStatus', 'maritalStatus',
+  'location', 'hometown',
 ];
 
 function stripFields(content: Record<string, unknown>): {

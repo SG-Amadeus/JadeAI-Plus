@@ -5,16 +5,17 @@ import { getModel, getJsonProviderOptions, type AIConfig } from '@/lib/ai/provid
 import { jdAnalysisOutputSchema } from '@/lib/ai/jd-analysis-schema';
 import { extractJson } from '@/lib/ai/extract-json';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
-import { sanitizeSectionsForAI, stripPersonalInfoForAI } from '@/lib/resume/sanitize';
+import { stripPersonalInfoForAI, PII_STRIP_FIELDS } from '@/lib/resume/sanitize';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 
 export function createExecutableTools(resumeId: string, aiConfig: AIConfig) {
   return {
     updateSection: tool({
       description: `Update the content of a specific resume section. Section content structures:
-- personal_info: { jobTitle, location } — name/email/phone are managed through your profile and are NEVER visible or editable
+- personal_info: { jobTitle } — other personal fields are managed through the editor form
 - summary: { text: string }
 - summary: { text: string }
-- work_experience: { items: [{ id, company, position, location, startDate, endDate, current, description, highlights }] }
+- work_experience: { items: [{ id, company, position, department, location, startDate, endDate, current, description, technologies, highlights, projects: [{ id, name, highlights }] }] }
 - education: { items: [{ id, institution, degree, field, location, startDate, endDate, gpa, highlights }] }
 - skills: { categories: [{ id, name, skills: string[] }] }
 - projects: { items: [{ id, name, url, description, technologies, highlights }] }
@@ -25,11 +26,11 @@ export function createExecutableTools(resumeId: string, aiConfig: AIConfig) {
 Use field="items" or field="categories" to update list sections. Each item MUST include a unique "id" (use a UUID).`,
       inputSchema: z.object({
         sectionId: z.string().describe('The ID of the section to update'),
-        field: z.string().describe('The field within the section to update (e.g., "fullName", "text", "items", "categories")'),
+        field: z.string().describe('The field within the section to update (e.g., "jobTitle", "text", "items", "categories")'),
         value: z.string().describe('The new value for the field. For complex values (arrays, objects), pass a JSON string.'),
       }),
       execute: async ({ sectionId, field, value }) => {
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const section = resume.sections.find((s: any) => s.id === sectionId);
@@ -131,13 +132,13 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
           }));
         }
 
-        // Block AI from modifying PII fields on personal_info (name, email, phone, wechat)
-        const PII_FIELDS = new Set(['fullName', 'email', 'phone', 'wechat']);
+        // Block AI from modifying any PII fields on personal_info
+        const PII_FIELDS = new Set(PII_STRIP_FIELDS);
         if (section.type === 'personal_info' && PII_FIELDS.has(actualField)) {
-          return { success: false, error: `Cannot modify personal contact fields. ${actualField} is managed through your profile, not via AI.` };
+          return { success: false, error: 'This personal field is managed through the editor form and cannot be modified via AI.' };
         }
 
-        const merged = { ...(section.content as Record<string, unknown>), [actualField]: parsedValue };
+        const merged = { ...(section.content as unknown as Record<string, unknown>), [actualField]: parsedValue };
         // Coerce inner list fields (highlights/technologies/skills) to arrays so a
         // string written by the model can't crash the renderer (issue #87).
         const updatedContent = normalizeSectionContent(section.type, merged);
@@ -165,7 +166,7 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
           return { success: false, error: 'personal_info sections are managed through your profile and cannot be created via AI.' };
         }
 
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const maxOrder = resume.sections.reduce((max: number, s: any) => Math.max(max, s.sortOrder), -1);
@@ -177,7 +178,7 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
           // Default content based on type
           if (type === 'skills') parsedContent = { categories: [] };
           else if (type === 'summary') parsedContent = { text: '' };
-          else if (type === 'personal_info') parsedContent = { fullName: '', jobTitle: '', email: '', phone: '', location: '' };
+          else if (type === 'personal_info') parsedContent = { jobTitle: '' };
           else parsedContent = { items: [] };
         }
 
@@ -201,19 +202,19 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
         improvedText: z.string().describe('The improved text to replace the original'),
       }),
       execute: async ({ sectionId, field, improvedText }) => {
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const section = resume.sections.find((s: any) => s.id === sectionId);
         if (!section) return { success: false, error: 'Section not found' };
 
-        // Block AI from rewriting PII fields on personal_info
-        const PII_FIELDS = new Set(['fullName', 'email', 'phone', 'wechat']);
+        // Block AI from rewriting any PII fields on personal_info
+        const PII_FIELDS = new Set(PII_STRIP_FIELDS);
         if (section.type === 'personal_info' && PII_FIELDS.has(field)) {
-          return { success: false, error: `Cannot rewrite personal contact fields. ${field} is managed through your profile, not via AI.` };
+          return { success: false, error: 'This personal field is managed through the editor form and cannot be rewritten via AI.' };
         }
 
-        const merged = { ...(section.content as Record<string, unknown>), [field]: improvedText };
+        const merged = { ...(section.content as unknown as Record<string, unknown>), [field]: improvedText };
         const updatedContent = normalizeSectionContent(section.type, merged);
         await resumeRepository.updateSection(sectionId, { content: updatedContent });
 
@@ -228,7 +229,7 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
         category: z.string().describe('The skill category name'),
       }),
       execute: async ({ skills, category }) => {
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const skillsSection = resume.sections.find((s: any) => s.type === 'skills');
@@ -257,11 +258,11 @@ Use field="items" or field="categories" to update list sections. Each item MUST 
         jobDescription: z.string().describe('The job description text to analyze against the resume'),
       }),
       execute: async ({ jobDescription }) => {
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const model = getModel(aiConfig);
-        const resumeContext = JSON.stringify(sanitizeSectionsForAI(resume.sections.filter((s: any) => !s.inherited)));
+        const resumeContext = JSON.stringify(resume.sections.filter((s: any) => !s.inherited));
         const result = await generateText({
           model,
           maxOutputTokens: 8192,
@@ -282,7 +283,7 @@ CRITICAL: You are a JSON API. Your entire response must be a single valid JSON o
         targetLanguage: z.enum(['zh', 'en']).describe('Target language: "zh" for Chinese, "en" for English'),
       }),
       execute: async ({ targetLanguage }) => {
-        const resume = await resumeRepository.findById(resumeId);
+        const resume = await getResumeForAI(resumeId);
         if (!resume) return { success: false, error: 'Resume not found' };
 
         const model = getModel(aiConfig);
@@ -296,8 +297,11 @@ CRITICAL: You are a JSON API. Your entire response must be a single valid JSON o
 
         // Translate each section concurrently (max 4 at a time)
         // Strip PII before sending to AI; merge back after translation
+        // Filter out inherited sections (derivative personal_info) — they have no real DB row
         const strippedFields = new Map<string, Record<string, unknown>>();
-        const sections = resume.sections.map((s: any) => {
+        const sections = resume.sections
+          .filter((s: any) => !s.inherited)
+          .map((s: any) => {
           if (s.type === 'personal_info') {
             const { content, stripped } = stripPersonalInfoForAI(s.content);
             if (Object.keys(stripped).length > 0) strippedFields.set(s.id, stripped);
@@ -319,7 +323,7 @@ Rules:
 - Use professional, formal ${langName} appropriate for resumes
 - Technical terms and programming languages stay in English
 - Preserve the exact JSON structure and all field names — only translate string values
-- Keep all IDs, URLs, emails, phone numbers unchanged
+- Keep all IDs and URLs unchanged
 - CRITICAL: Return a single valid JSON object with keys: sectionId, title, content. No markdown, no code fences.`,
             prompt: `Translate this resume section. Return JSON with keys: sectionId, title, content.\n\n${JSON.stringify(section)}`,
             providerOptions: getJsonProviderOptions(aiConfig),

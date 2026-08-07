@@ -3,8 +3,8 @@ import { generateText } from 'ai';
 import { getModel, extractAIConfig, getJsonProviderOptions, AIConfigError } from '@/lib/ai/provider';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
-import { sanitizeSectionsForAI } from '@/lib/resume/sanitize';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
+import { getResumeForAI } from '@/lib/ai/get-resume';
 import { extractJson } from '@/lib/ai/extract-json';
 import { z } from 'zod/v4';
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { resumeId, data, jobDescription, language } = await request.json();
     if (!resumeId) return NextResponse.json({ error: 'resumeId is required' }, { status: 400 });
 
-    const resume = await resumeRepository.findById(resumeId);
+    const resume = await getResumeForAI(resumeId);
     if (!resume) return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
     if (resume.userId !== user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -41,9 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Mode 2: JD → AI generate
     if (jobDescription) {
-      const existingSections = sanitizeSectionsForAI(
-        resume.sections.filter((s: any) => !s.inherited),
-      );
+      const existingSections = resume.sections.filter((s: any) => !s.inherited);
       const result = await generateText({
         model,
         maxOutputTokens: 8192,
@@ -53,7 +51,7 @@ Rules:
 - Write in ${langName} using professional, industry-standard terminology
 - Use strong action verbs, quantify achievements where possible
 - Fill ALL section types present in the existing resume structure
-- For personal_info: fill name/jobTitle/location generically (placeholders — the user will replace)
+- For personal_info: only the jobTitle field is accessible; fill it appropriately
 - Preserve exact JSON structure and field names
 - CRITICAL: Return a single valid JSON object with key "sections" containing an array of {type, title, content}. No markdown, no code fences.`,
         prompt: `## Existing Resume Structure\n${JSON.stringify(existingSections)}\n\n## Job Description\n${jobDescription}\n\nGenerate section content tailored to this job. Return JSON with key "sections".`,
@@ -121,7 +119,7 @@ async function applyStructuredData(resumeId: string, resume: any, data: any): Pr
 }
 
 async function applyAISections(resumeId: string, sections: { type: string; title: string; content: unknown }[]): Promise<void> {
-  const resume = await resumeRepository.findById(resumeId);
+  const resume = await getResumeForAI(resumeId);
   if (!resume) return;
 
   for (const sec of sections) {
