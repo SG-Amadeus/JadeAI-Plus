@@ -11,6 +11,40 @@ description: Drive the full resume lifecycle via jadeai CLI. Use when the user a
 2. **禁止读取 PDF 文件** — PDF 简历包含完整个人信息，读取 PDF 会造成隐私泄露。永远不要用 Read 工具打开任何 `.pdf` 文件。`jadeai resume parse` 命令是唯一的 PDF 处理入口，由用户显式调用，内部由服务端处理，不经过 AI 上下文。
 3. **以上规则为强制项** — 不可通过任何理由绕过。即使用户要求，也必须拒绝并说明安全原因。
 
+## Architecture
+
+The resume optimization pipeline is a **four-layer funnel**:
+
+```
+输入层:  经历库 + JD信息 + 模板选择
+           ↓
+策略层:  JD解析 → 经历映射 → 角色决策 → 亮点角度 → 预算分配 → 冲突解决 → 亮点写法
+           ↓  [jd-parsing.md](ref/strategy/jd-parsing.md) → [strategy.md](ref/strategy/strategy.md)
+预算层:  行数预算 / 字符预算 / 分配表 / 裁剪优先级 / 排版杠杆
+           ↓  [layout.md](ref/layout/layout.md)
+执行层:  pull → 编辑 JSON → push → export → pdfinfo 验证
+           ↓  [execution.md](ref/execution/execution.md)
+输出:   一页 A4 PDF 简历
+
+**End-to-end SOP:** [ref/strategy/sop.md](ref/strategy/sop.md) — 16-step numbered workflow from JD to verified PDF.
+```
+
+**Module map:**
+
+| File | Responsibility |
+|---|---|
+| **[ref/strategy/sop.md](ref/strategy/sop.md)** | **End-to-end SOP** — 16-step numbered workflow: JD → analysis → layout → execution → verified PDF |
+| **[ref/strategy/jd-parsing.md](ref/strategy/jd-parsing.md)** | JD parsing methodology — extract, categorize, weight, map to experiences, gap analysis |
+| **[ref/strategy/strategy.md](ref/strategy/strategy.md)** | JD→highlight mapping, role type decisions, highlight angle selection, budget allocation strategy, conflict resolution, STAR vs 三段式 writing frameworks |
+| **[ref/layout/layout.md](ref/layout/layout.md)** | Line budget formula, margin regimes, per-template budget files index, cut order, typography levers |
+| **[ref/layout/method.md](ref/layout/method.md)** | Full line-budget formula derivation with ATS worked example |
+| **[ref/layout/char-budget.md](ref/layout/char-budget.md)** | Per-font-size character-per-line lookup tables (EN/ZH) |
+| **[ref/layout/content-budget.md](ref/layout/content-budget.md)** | Per-template per-section allocation tables + per-item component costs |
+| **[ref/layout/templates/](ref/layout/templates/)** | 7 per-template markdown budget files (typography profile, line capacity, allocation tables, cut order) |
+| **[ref/execution/execution.md](ref/execution/execution.md)** | Command contract, pull/push workflow, section type reference, experience library shapes, root/derivative branching, error codes |
+| **[ref/writing/internship.md](ref/writing/internship.md)** | Internship/work experience writing conventions (sub-project structure, highlight tiers) |
+| **[ref/writing/project.md](ref/writing/project.md)** | Project experience writing conventions (STAR, quantified results, action verbs) |
+
 ## Quick Start
 
 ```bash
@@ -31,6 +65,12 @@ pnpm install && pnpm setup && pnpm link --global
 
 ## Decision Tree: Which Command to Use
 
+### "I have a JD and want to create a targeted one-page resume"
+→ Follow the **[end-to-end SOP](ref/strategy/sop.md)** — 16 steps across 3 phases:
+1. **Analysis** — parse JD, map to experiences, choose angles, allocate budget
+2. **Layout** — load template budget, inventory content, cut/compress per priority
+3. **Execution** — edit JSON, push, export, verify single page
+
 ### "I want to see what templates are available"
 → `jadeai template list`
 
@@ -42,14 +82,42 @@ Creates a root resume. Always follow up with `jadeai pull <id> --out ./jd-{compa
 → `jadeai resume list`
 
 ### "I want to export a resume to PDF/HTML/DOCX"
-→ `jadeai resume export <resume-id> --format pdf --out file.pdf`
+→ `jadeai resume export <resume-id> --format pdf --out file.pdf [--fit-one-page] [--for-print]`
+Use `--fit-one-page` to auto-shrink typography so the resume fits a single A4 page (last resort — prefer content budgeting first). Use `--for-print` to add print-friendly CSS (page breaks, background colors).
+
+### "I want to fit a resume to one page / budget content"
+→ Follow the **layout optimization workflow**: [strategy.md](ref/strategy/strategy.md) for JD-aware content decisions → [layout.md](ref/layout/layout.md) for per-template line budgets and cut order → [execution.md](ref/execution/execution.md) for pull/push/export commands. Apply typography levers before resorting to `--fit-one-page`.
+
+### "I want to inspect a resume's metadata (template, theme, sections)"
+→ `jadeai resume show <resume-id> --json | jq '{template, themeConfig, language, sectionTypes: [.sections[].type]}'`
 
 ### "I need to bulk-edit resume content locally"
 → `jadeai pull <resume-id> --out <dir>` then `jadeai push <resume-id> --from <dir>`
 Pull exports each section as `<type>.json`. User edits the files. Push syncs them back.
 
 ### "I want to tailor a resume for a specific job"
-→ `jadeai resume derive <root-resume-id> --title "JD: Company X"`
+
+**AI-assisted path (recommended):** Uses the optimize API to rewrite content for the JD while preserving facts.
+
+```bash
+# Step 1: Create a derivative from your root resume
+jadeai resume derive <root-resume-id> --title "JD: Company X Role"
+
+# Step 2: AI optimizes all sections for the JD
+curl -s -X POST http://localhost:3000/api/ai/optimize \
+  -H "Content-Type: application/json" \
+  -H "x-fingerprint: <fingerprint>" \
+  -H "x-provider: <provider>" \
+  -H "x-api-key: <key>" \
+  -d '{"resumeId":"<derivative-id>","jobDescription":"<paste JD text here>"}'
+
+# Step 3: Export to PDF
+jadeai resume export <derivative-id> --format pdf --out ./resume.pdf
+```
+
+The optimize API rewrites wording for JD keyword alignment and emphasis — company names, dates, positions, and factual details are preserved. See **Recipe 8** below for the full walkthrough with all options.
+
+**Manual path:** `jadeai resume derive <root-resume-id> --title "JD: Company X"`
 Creates a derivative branch. Personal info inherited from root. Then pull/push to customize.
 
 ### "I want to make a derivative standalone"
@@ -195,6 +263,9 @@ jadeai section delete  <resume-id> <section-id>
 jadeai section reorder <resume-id> --order <id,id,...>
 ```
 
+- `section update --visible false` is the sanctioned way to hide a section (e.g., when trimming for one-page fit). Prefer hiding over deleting — hidden sections can be restored later.
+- `resume update --theme <json-file>` accepts a **partial** ThemeConfig. Only include the fields you want to change (e.g. `{"lineSpacing": 1.35, "sectionSpacing": 12}`). Omitted fields keep their current values.
+
 ### Item
 
 ```
@@ -206,115 +277,32 @@ jadeai item reorder <resume-id> <section-id> --order <id,id,...>
 
 ## Section Type Reference
 
-| type | content shape |
-|------|---------------|
-| `personal_info` | `{fullName, jobTitle, email, phone, location, ...}` |
-| `summary` | `{text}` |
-| `work_experience` | `{items: [{id, company, position, department?, location?, startDate, endDate, current, description, technologies[], highlights[], projects?: [{id, name, highlights[]}]}]}` |
-| `education` | `{items: [{id, institution, degree, field, startDate, endDate, gpa, highlights[]}]}` |
-| `skills` | `{categories: [{id, name, skills[]}]}` |
-| `projects` | `{items: [{id, name, url, description, technologies[], highlights[]}]}` |
-| `certifications` | `{items: [{id, name, issuer, date, url}]}` |
-| `languages` | `{items: [{id, language, proficiency, description}]}` |
-| `github` | `{items: [{id, repoUrl, name, stars, language, description}]}` |
-| `custom` | `{items: [{id, title, subtitle, date, description}]}` |
-| `qr_codes` | `{items: [{id, label, url}]}` |
+→ See [ref/execution/execution.md](ref/execution/execution.md) for the canonical section type table and content shapes.
 
 ## Section Ordering Convention
 
-When creating or reorganizing a resume, follow this section order:
+→ See [ref/execution/execution.md](ref/execution/execution.md) for the standard section order and principles.
 
-1. **personal_info** — always first (inherited from profile)
-2. **education** — required
-3. **work_experience** — required (includes internships; list internships chronologically within this section)
-4. **projects** — required
-5. **skills** — required
-6. **certifications** — optional
-7. **languages** — optional
-8. **github** — optional
-9. **custom** — optional
-10. **qr_codes** — optional (placed at end if present)
-
-The principle: 个人信息 → 教育经历 → 实习/工作经历 → 项目 + 其他能力证明。
-
-## Writing Guidelines (references/)
+## Writing Guidelines
 
 When writing or editing resume content, consult these reference guides for detailed conventions:
 
-- **项目经历写作规范** → [references/project-writing.md](references/project-writing.md) — STAR 法则、量化结果、动作动词库、项目分级标准
-- **实习/工作经历写作规范** → [references/internship-writing.md](references/internship-writing.md) — 子项目结构、亮点分级、部门字段使用、常见错误
+- **项目经历写作规范** → [ref/writing/project.md](ref/writing/project.md) — STAR 法则、量化结果、动作动词库、项目分级标准
+- **实习/工作经历写作规范** → [ref/writing/internship.md](ref/writing/internship.md) — 子项目结构、亮点分级、部门字段使用、常见错误
 
 Load the relevant guide when the user asks to write, edit, or review project descriptions or internship/work experience entries.
 
+**Line budget awareness**: Highlight counts and description lengths are constrained by the template's one-page line budget. For per-template highlight caps and cut-order rules, see [ref/layout/layout.md](ref/layout/layout.md) and the per-template budget files in [ref/layout/templates/](ref/layout/templates/). In general: 2-3 highlights per work experience, 1-2 per project, and keep descriptions to 2 lines or fewer.
+
 ---
 
-## Experience Library Data Shapes
+## Experience Library
 
-Experience entries (stored in `experiences` table, managed via `jadeai experience *`):
-
-### work / internship
-
-```json
-{
-  "company": "Acme Corp",
-  "position": "Software Engineer",
-  "startDate": "2023-01",
-  "endDate": "2024-12",
-  "current": false,
-  "summary": "Full narrative description of the role — responsibilities, impact, team context, key projects. AI reads this as the source of truth to generate JD-specific highlights.",
-  "technologies": ["TypeScript", "React", "Node.js"],
-  "highlights": ["Reduced latency by 40%", "Led team of 5"],
-  "notes": "Internal context: this was a greenfield project..."
-}
-```
-
-### project
-
-```json
-{
-  "name": "Open Source Dashboard",
-  "url": "https://github.com/user/project",
-  "startDate": "2024-03",
-  "endDate": "2024-08",
-  "summary": "Full narrative description of the project — purpose, architecture, personal contribution, outcomes. AI reads this as the source of truth.",
-  "technologies": ["Python", "FastAPI", "PostgreSQL"],
-  "highlights": ["1k+ GitHub stars", "Featured on Product Hunt"],
-  "notes": "Built over weekends; the streaming architecture is worth highlighting"
-}
-```
-
-**Key data model rules:**
-
-- `summary` is the **source of truth** — a complete, flowing narrative of the experience. Write in full prose, telling the story in rich detail. AI reads this to deeply understand the experience, then produces JD-specific highlights. The richer the narrative, the better the AI output.
-  - Format: full prose with paragraphs. Can use Markdown headings to organize by angle, but each section is narrative text.
-  - Key distinction: `summary` = complete story (完整叙事, source material), `highlights` = JD-specific retellings (针对不同 JD 的经历描述, derivative).
-  - Suggested angles to cover: project context & goals, personal role & responsibilities, technical architecture & decisions, team & collaboration, measurable outcomes & impact, challenges & lessons learned, business value delivered.
-  - Anti-pattern: a single sentence or a list of bullet points. Aim for multiple paragraphs of flowing narrative.
-- `highlights` are **JD-specific retellings** of the experience — NOT one-line bullet points. Each highlight is a paragraph-level description that re-frames the same experience to emphasize what a particular JD values. The same `summary` should yield different highlights for a frontend role, a backend role, or a management role. AI generates these per JD from the `summary`; manual pre-fills are optional and will be overwritten or augmented during JD optimization.
-- `notes` is for AI internal reference — stripped when copying entries to a resume.
-- When copying to a resume section, `summary` is mapped to the resume's `description` field, and `notes` is stripped.
+→ See [ref/execution/execution.md](ref/execution/execution.md) for data shapes (work/internship/project), CLI commands, and the key rules: `summary` = source of truth, `highlights` = JD-specific retellings, `notes` = AI-only.
 
 ## Root/Derivative Branching
 
-Root = personal info master + detailed experience library.
-Derivative = JD-specific branch (inherits personal_info from root, owns copies of everything else).
-
-### Rules
-
-- Only roots (parentId == null) can be derived from.
-- Deleting a root with derivatives → 409. Use `--force` to cascade.
-- Duplicating a derivative keeps same parentId.
-- Personal info is ONLY on root, NEVER visible to AI.
-- Derivatives get root's personal_info as inherited (synthetic id, `inherited: true`).
-
-### Security Rules — Personal Profiles
-
-- Personal profile DATA (fullName, email, phone, github, age, etc.) is filled ONLY through the web UI at `/profiles`.
-- The CLI/agent may reference profiles by codename only (`profile list`, `resume create --profile`). There are no commands to read or write profile data.
-- Profile data is NEVER sent to AI providers. The `personal_profiles` table is never queried by any AI route.
-- When a resume is bound to a profile, the AI system prompt receives only the codename as a reference note (e.g. "This resume references personal profile codename: `<X>`."). No profile fields are included.
-- The `personal_info` section on the resume is a snapshot copy — changing the profile later does not update existing resumes.
-- JSON export (`format=json`) excludes `personal_info` entirely; it exports only experience sections plus the codename reference.
+→ See [ref/execution/execution.md](ref/execution/execution.md) for branching rules, security rules for personal profiles, and the full PII protection model.
 
 ## Workflow Recipes
 
@@ -445,14 +433,103 @@ for row in $(cat import.json | jq -c '.[]'); do
 done
 ```
 
+### Recipe 7: Fit content to one page (layout optimization)
+
+```bash
+# Step 1: Inspect current template and theme
+jadeai resume show <id> --json | jq '{template, themeConfig, language, sectionTypes: [.sections[].type]}'
+
+# Step 2: Pull content for inventory (PII-safe)
+jadeai pull <id> --out ./jd-<company>-<role>/
+
+# Step 3: Apply per-template budget caps (see ref/layout/layout.md and ref/layout/templates/<id>.md)
+# → Count items and highlights per section
+# → Compare against the template's allocation table
+# → Cut/compress per the cut order
+
+# Step 4: Push edits
+jadeai push <id> --from ./jd-<company>-<role>/
+
+# Step 5: Apply typography levers if needed (only after content decisions)
+echo '{"lineSpacing":1.35,"sectionSpacing":12}' > ./theme.json
+jadeai resume update <id> --theme ./theme.json
+
+# Step 6: Export with fit-one-page as safety net
+jadeai resume export <id> --format pdf --out ./jd-<company>-<role>/resume.pdf --fit-one-page
+
+# Step 7: Verify single page (metadata only)
+pdfinfo ./jd-<company>-<role>/resume.pdf | grep Pages
+```
+
+The key principle: **content budgeting before typography shrinking**. The `--fit-one-page` flag is a last resort — it shrinks fonts down to 80% and squashes spacing. Prefer cutting optional sections and compressing highlights first. See [ref/layout/layout.md](ref/layout/layout.md) for the full methodology and [ref/strategy/strategy.md](ref/strategy/strategy.md) for JD-aware trade-off decisions.
+
+### Recipe 8: JD-tailored resume with AI optimization
+
+Uses the optimize API to automatically rewrite resume content for a specific job description while preserving factual details (company names, dates, positions). The API's system prompt enforces: **"Do NOT fabricate experience — adapt and emphasize existing content"**.
+
+```bash
+# Prerequisites: server must be running
+jadeai start &
+jadeai ping
+
+# Step 1: Create a derivative from your best-fit root resume
+DERIVED=$(jadeai resume derive <root-id> --title "JD: Company Role" --json | jq -r '.data.id')
+echo "Derived resume: $DERIVED"
+
+# Step 2: Optimize all sections for the JD (paste full JD text into the JSON body)
+# Required headers: x-fingerprint (auth user), x-provider + x-api-key (AI provider)
+curl -s -X POST http://localhost:3000/api/ai/optimize \
+  -H "Content-Type: application/json" \
+  -H "x-fingerprint: demo-fingerprint" \
+  -H "x-provider: deepseek" \
+  -H "x-api-key: $DEEPSEEK_API_KEY" \
+  -d "{\"resumeId\":\"$DERIVED\",\"jobDescription\":\"$(cat jd.txt | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
+
+# Optional: target only specific sections by ID
+# Add "sectionIds": ["<id1>", "<id2>"] to the JSON body
+
+# Step 3: Preview the optimized content before exporting
+jadeai resume show "$DERIVED" --json | jq '.sections[] | {type, title}'
+
+# Step 4: Fine-tune manually if needed
+jadeai pull "$DERIVED" --out ./jd-<company>-<role>/
+# edit JSON files, then:
+jadeai push "$DERIVED" --from ./jd-<company>-<role>/
+
+# Step 5: Export final PDF
+jadeai resume export "$DERIVED" --format pdf --out ./jd-<company>-<role>/resume.pdf --fit-one-page
+
+# Step 6: Verify single page
+pdfinfo ./jd-<company>-<role>/resume.pdf | grep Pages
+```
+
+**How it works:**
+
+- `derive` copies all non-personal_info sections from the root. Personal info (name, phone, email, etc.) is inherited read-time from the root's profile — never stored in the derivative.
+- `POST /api/ai/optimize` sends the JD + resume sections (PII automatically stripped via `getResumeForAI()`) to the AI. The AI rewrites wording to align with JD keywords and emphasis while preserving company names, dates, titles, and other facts.
+- The response includes a `summary` field explaining what was changed — review it to understand what the AI adjusted.
+- After optimization, export the PDF. Review and iterate by re-running step 2 with refined keywords or by manually editing via pull/push.
+
+**AI provider headers:** The optimize endpoint requires `x-provider` and `x-api-key` (or `x-base-url` for custom endpoints). Supported providers: `deepseek`, `openai`, `anthropic`, `google`, `zai`, `siliconflow`, `custom`. See `src/lib/ai/provider.ts` for the full list.
+
+**Multi-JD batch variant:**
+
+```bash
+for jd_file in jd-*.txt; do
+  company=$(basename "$jd_file" .txt | sed 's/^jd-//')
+  FOLDER="./jd-${company}"
+  mkdir -p "$FOLDER"
+  DERIVED=$(jadeai resume derive <root-id> --title "JD: $company" --json | jq -r '.data.id')
+  curl -s -X POST http://localhost:3000/api/ai/optimize \
+    -H "Content-Type: application/json" \
+    -H "x-fingerprint: demo-fingerprint" \
+    -H "x-provider: deepseek" \
+    -H "x-api-key: $DEEPSEEK_API_KEY" \
+    -d "{\"resumeId\":\"$DERIVED\",\"jobDescription\":\"$(cat "$jd_file" | sed 's/"/\\"/g' | tr '\n' ' ')\"}"
+  jadeai resume export "$DERIVED" --format pdf --out "$FOLDER/resume.pdf" --fit-one-page
+done
+```
+
 ## Error Codes
 
-| Exit | Meaning | Action |
-|------|---------|--------|
-| 0 | Success | — |
-| 1 | Usage error | Check missing flags or args |
-| 2 | Network error | Is `jadeai start` running? |
-| 3 | API error | Bad fingerprint, not found, 409 (has derivatives) |
-| 4 | I/O error | File not found, permission denied |
-
-JSON mode (`--json`) outputs `{"ok":true,"data":...}` or `{"ok":false,"error":"..."}`.
+→ See [ref/execution/execution.md](ref/execution/execution.md) for exit code table and JSON mode format.
