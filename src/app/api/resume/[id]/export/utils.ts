@@ -147,9 +147,9 @@ export function buildExportThemeCSS(theme: typeof DEFAULT_THEME, template: strin
   const primaryIsDark = isDark(theme.primaryColor);
   return `
     ${sel} > div {
-      font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif !important;
-      line-height: ${theme.lineSpacing} !important;
-      ${needsPadding ? `padding-top: ${m.top}px !important; padding-right: ${m.right}px !important; padding-bottom: ${m.bottom}px !important; padding-left: ${m.left}px !important;` : ''}
+      font-family: ${theme.fontFamily}, 'Noto Sans SC', sans-serif;
+      line-height: ${theme.lineSpacing};
+      ${needsPadding ? `padding-top: ${m.top}px; padding-right: ${m.right}px; padding-bottom: ${m.bottom}px; padding-left: ${m.left}px;` : ''}
       --base-body-size: ${fs.body};
       --base-h1-size: ${fs.h1};
       --base-h2-size: ${fs.h2};
@@ -163,15 +163,15 @@ export function buildExportThemeCSS(theme: typeof DEFAULT_THEME, template: strin
       --needs-padding: ${needsPadding ? '1' : '0'};
     }
     ${sel} p, ${sel} li, ${sel} span, ${sel} td, ${sel} a, ${sel} div {
-      font-size: ${fs.body} !important;
-      line-height: ${theme.lineSpacing} !important;
+      font-size: ${fs.body};
+      line-height: ${theme.lineSpacing};
     }
-    ${sel} h1:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h1[style*="color"] { font-size: ${fs.h1} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h2:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
-    ${sel} h2[style*="color"] { font-size: ${fs.h2} !important; line-height: ${theme.lineSpacing} !important; border-color: ${theme.accentColor} !important; }
-    ${sel} h3:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
-    ${sel} h3[style*="color"] { font-size: ${fs.h3} !important; line-height: ${theme.lineSpacing} !important; }
+    ${sel} h1:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h1}; line-height: ${theme.lineSpacing}; }
+    ${sel} h1[style*="color"] { font-size: ${fs.h1}; line-height: ${theme.lineSpacing}; }
+    ${sel} h2:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h2}; line-height: ${theme.lineSpacing}; border-color: ${theme.accentColor} !important; }
+    ${sel} h2[style*="color"] { font-size: ${fs.h2}; line-height: ${theme.lineSpacing}; border-color: ${theme.accentColor} !important; }
+    ${sel} h3:not([style*="color"]) { color: ${theme.primaryColor} !important; font-size: ${fs.h3}; line-height: ${theme.lineSpacing}; }
+    ${sel} h3[style*="color"] { font-size: ${fs.h3}; line-height: ${theme.lineSpacing}; }
     ${sel} [class*="border-b-2"], ${sel} [class*="border-b-"] { border-color: ${theme.accentColor} !important; }
     ${sel} [class*="bg-blue-"], ${sel} [class*="bg-indigo-"],
     ${sel} [class*="bg-slate-800"], ${sel} [class*="bg-zinc-800"],
