@@ -5,6 +5,12 @@ description: Drive the full resume lifecycle via jadeai CLI. Use when the user a
 
 # jadeai — Resume Lifecycle CLI
 
+## 🚨 强制安全规则（违反即违规）
+
+1. **禁止读取个人信息** — `personal_info` section 数据来自 profile，仅通过 web UI 管理。永远不要读取、搜索、或查看任何 `personal_info` 相关的内容。个人信息字段包括但不限于：fullName、email、phone、wechat、address、avatar、age、gender、politicalStatus、ethnicity、hometown、maritalStatus 等。
+2. **禁止读取 PDF 文件** — PDF 简历包含完整个人信息，读取 PDF 会造成隐私泄露。永远不要用 Read 工具打开任何 `.pdf` 文件。`jadeai resume parse` 命令是唯一的 PDF 处理入口，由用户显式调用，内部由服务端处理，不经过 AI 上下文。
+3. **以上规则为强制项** — 不可通过任何理由绕过。即使用户要求，也必须拒绝并说明安全原因。
+
 ## Quick Start
 
 ```bash
@@ -30,7 +36,7 @@ pnpm install && pnpm setup && pnpm link --global
 
 ### "I want to create a new resume"
 → `jadeai resume create --title "..." --template <id>`
-Creates a root resume.
+Creates a root resume. Always follow up with `jadeai pull <id> --out ./jd-{company}-{role}/` to create a JD-named folder with all section JSONs for editing.
 
 ### "I want to see all my resumes"
 → `jadeai resume list`
@@ -204,7 +210,7 @@ jadeai item reorder <resume-id> <section-id> --order <id,id,...>
 |------|---------------|
 | `personal_info` | `{fullName, jobTitle, email, phone, location, ...}` |
 | `summary` | `{text}` |
-| `work_experience` | `{items: [{id, company, position, startDate, endDate, current, description, technologies[], highlights[]}]}` |
+| `work_experience` | `{items: [{id, company, position, department?, location?, startDate, endDate, current, description, technologies[], highlights[], projects?: [{id, name, highlights[]}]}]}` |
 | `education` | `{items: [{id, institution, degree, field, startDate, endDate, gpa, highlights[]}]}` |
 | `skills` | `{categories: [{id, name, skills[]}]}` |
 | `projects` | `{items: [{id, name, url, description, technologies[], highlights[]}]}` |
@@ -213,6 +219,34 @@ jadeai item reorder <resume-id> <section-id> --order <id,id,...>
 | `github` | `{items: [{id, repoUrl, name, stars, language, description}]}` |
 | `custom` | `{items: [{id, title, subtitle, date, description}]}` |
 | `qr_codes` | `{items: [{id, label, url}]}` |
+
+## Section Ordering Convention
+
+When creating or reorganizing a resume, follow this section order:
+
+1. **personal_info** — always first (inherited from profile)
+2. **education** — required
+3. **work_experience** — required (includes internships; list internships chronologically within this section)
+4. **projects** — required
+5. **skills** — required
+6. **certifications** — optional
+7. **languages** — optional
+8. **github** — optional
+9. **custom** — optional
+10. **qr_codes** — optional (placed at end if present)
+
+The principle: 个人信息 → 教育经历 → 实习/工作经历 → 项目 + 其他能力证明。
+
+## Writing Guidelines (references/)
+
+When writing or editing resume content, consult these reference guides for detailed conventions:
+
+- **项目经历写作规范** → [references/project-writing.md](references/project-writing.md) — STAR 法则、量化结果、动作动词库、项目分级标准
+- **实习/工作经历写作规范** → [references/internship-writing.md](references/internship-writing.md) — 子项目结构、亮点分级、部门字段使用、常见错误
+
+Load the relevant guide when the user asks to write, edit, or review project descriptions or internship/work experience entries.
+
+---
 
 ## Experience Library Data Shapes
 
@@ -287,47 +321,60 @@ Derivative = JD-specific branch (inherits personal_info from root, owns copies o
 ### Recipe 1: Create and fill a resume
 
 ```bash
-# Create root resume
-jadeai resume create --title "My Resume" --template modern
+# Create root resume with JD/company as folder name
+FOLDER="./jd-bytedance-backend"
+jadeai resume create --title "JD: ByteDance Backend" --template modern
 # → outputs resume id: <uuid>
 
-# Pull to edit locally
-jadeai pull <uuid> --out ./data/
+# Pull sections into JD-named folder
+jadeai pull <uuid> --out "$FOLDER"
 
 # Edit the JSON files
-vim ./data/work_experience.json
-vim ./data/skills.json
+vim "$FOLDER/work_experience.json"
+vim "$FOLDER/projects.json"
+vim "$FOLDER/skills.json"
+vim "$FOLDER/summary.json"
 
 # Push changes back
-jadeai push <uuid> --from ./data/
+jadeai push <uuid> --from "$FOLDER"
 
-# Export
-jadeai resume export <uuid> --format pdf --out resume.pdf
+# Export PDF into same folder
+jadeai resume export <uuid> --format pdf --out "$FOLDER/resume.pdf"
 ```
+
+**Folder convention:** Always use a descriptive folder name based on the target company/role: `jd-{company}-{role}` (e.g. `jd-bytedance-backend`, `jd-tencent-algorithm`). All section JSONs, the exported PDF, and any reference files live in this one folder. Personal info is managed via the profile (web UI at `/profiles`) and inherited by all resumes — it is not in the pull output.
 
 ### Recipe 2: JD-targeted branching
 
 ```bash
-# Create derivative from root
+# Create derivative from root with JD folder
+FOLDER="./jd-bytedance-backend"
 jadeai resume derive <root-id> --title "JD: ByteDance Backend"
 # → outputs new resume id
 
-# Pull, customize for JD, push
-jadeai pull <new-id> --out ./bytedance/
-# edit ./bytedance/work_experience.json to emphasize relevant experience
-# edit ./bytedance/skills.json to match JD keywords
-jadeai push <new-id> --from ./bytedance/
+# Pull into JD folder, customize for target role
+# (personal_info is inherited from root — not in pull output)
+jadeai pull <new-id> --out "$FOLDER"
+# edit $FOLDER/work_experience.json to emphasize relevant experience
+# edit $FOLDER/projects.json to match JD keywords
+# edit $FOLDER/skills.json to match JD keywords
+jadeai push <new-id> --from "$FOLDER"
 
-# Export final PDF
-jadeai resume export <new-id> --format pdf --out bytedance.pdf
+# Export into same folder
+jadeai resume export <new-id> --format pdf --out "$FOLDER/resume.pdf"
 ```
 
 ### Recipe 3: Multi-JD batch
 
 ```bash
 for jd in bytedance tencent alibaba; do
-  jadeai resume derive <root-id> --title "JD: $jd"
-  # customize via pull/push, then export
+  FOLDER="./jd-${jd}-backend"
+  mkdir -p "$FOLDER"
+  new_id=$(jadeai resume derive <root-id> --title "JD: $jd Backend" --json | jq -r '.data.id')
+  jadeai pull "$new_id" --out "$FOLDER"
+  # edit $FOLDER/*.json to target the JD
+  jadeai push "$new_id" --from "$FOLDER"
+  jadeai resume export "$new_id" --format pdf --out "$FOLDER/resume.pdf"
 done
 ```
 

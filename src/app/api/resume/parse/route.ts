@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     // Parse JSON from response
     const raw = parseJsonFromText(result.text);
     if (!raw || typeof raw !== 'object') {
-      console.error('[parse] Failed to parse JSON. Raw text:', result.text.slice(0, 500));
+      console.error('[parse] Failed to parse JSON from AI response (length=%d, finishReason=%s)', result.text.length, result.finishReason);
       return NextResponse.json({ error: 'Failed to extract resume data' }, { status: 500 });
     }
 
