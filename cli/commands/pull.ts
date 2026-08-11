@@ -43,16 +43,14 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
     count++;
   }
 
-  // Write theme.json alongside section JSONs for CLI layout adjustment
-  if (resume.themeConfig) {
-    // Normalize: DB may store as string or already-parsed object
-    const tc = typeof resume.themeConfig === 'string'
-      ? JSON.parse(resume.themeConfig)
-      : resume.themeConfig;
-    const themeFile = resolve(dir, 'theme.json');
-    writeOutput(JSON.stringify(tc, null, 2), themeFile);
-    out.progress('Wrote theme.json');
-  }
+  // Always write theme.json alongside section JSONs for CLI layout adjustment.
+  // Server guarantees themeConfig is an object (repository normalizes on read).
+  const tc = typeof resume.themeConfig === 'string'
+    ? JSON.parse(resume.themeConfig)
+    : (resume.themeConfig || {});
+  const themeFile = resolve(dir, 'theme.json');
+  writeOutput(JSON.stringify(tc, null, 2), themeFile);
+  out.progress('Wrote theme.json');
 
   // Write profile reference if bound
   if (resume.profileCodename) {
