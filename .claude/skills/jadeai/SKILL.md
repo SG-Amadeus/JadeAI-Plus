@@ -99,12 +99,38 @@ jadeai pull <id> --out ./jd-<company>-<role>/
 8. personal_info                    → 永不修改
 ```
 
-**通过全部三道检查点后**：
+### Checkpoint 4: Typography Adjustment（内容裁剪不够时）
+
+如果内容裁剪后仍然超出，按顺序调整排版参数。**每个杠杆都是 CLI 命令**——完整参数参考 [ref/layout/theme-cli.md](ref/layout/theme-cli.md)：
+
+| 顺序 | 参数 | 操作 | 释放行数 | 下限 |
+|---|---|---|---|---|
+| 1 | sectionSpacing ↓ | 编辑 `theme.json`: `"sectionSpacing": 12` → `push` | +1-3 | 4px |
+| 2 | lineSpacing ↓ | 编辑 `theme.json`: `"lineSpacing": 1.35` → `push` | +3-4 | 1.15 |
+| 3 | margin ↓ | 编辑 `theme.json`: `"margin": {"top": 16, "bottom": 16}` → `push` | +1-2 | 8px |
+| 4 | fontSize small | 编辑 `theme.json`: `"fontSize": "small"` → `push` | +10-12 | — |
+| 5 | template switch | `jadeai resume update <id> --template ats` | 不定 | — |
+
+`pull` 导出 `theme.json` 到文件夹，编辑后 `push` 自动同步。每次只改一个参数，改完 export 验证 `pdfinfo \| grep Pages`。
+
+**通过全部检查点后**：
 
 ```bash
-jadeai push <id> --from ./jd-<company>-<role>/
+jadeai push <id> --from ./jd-<company>-<role>/     # 同步 section JSONs + theme.json，一步搞定
 jadeai resume export <id> --format pdf --out ./jd-<company>-<role>/resume.pdf --fit-one-page
 pdfinfo ./jd-<company>-<role>/resume.pdf | grep Pages  # 必须 Pages: 1
+```
+
+**文件夹结构（一份简历 = 一个文件夹）：**
+```
+jd-<company>-<role>/
+├── theme.json              ← pull 导出，push 自动同步
+├── work_experience.json    ← pull 导出，push 同步
+├── projects.json
+├── education.json
+├── skills.json
+├── _profile.txt            ← profile codename（仅供引用）
+└── resume.pdf              ← 最终输出
 ```
 
 ### 触发时机
@@ -141,19 +167,18 @@ pnpm install && pnpm setup && pnpm link --global
 | 操作 | 命令 |
 |---|---|
 | 启动服务器 | `jadeai start &` |
-| 创建简历 | `jadeai resume create --title "..." --template <id> [--profile <name>]` |
+| 创建简历 | `jadeai resume create --title "..." --template <id> [--profile <name>] --out ./jd-{company}-{role}/` |
 | 列出简历 | `jadeai resume list` |
 | 查看简历 | `jadeai resume show <id>` |
 | 创建衍生 | `jadeai resume derive <root-id> --title "..."` |
 | 拉取到本地 | `jadeai pull <id> --out ./jd-<company>-<role>/` |
-| 推送回服务 | `jadeai push <id> --from ./jd-<company>-<role>/` |
+| 推送 section 回服务 | `jadeai push <id> --from ./jd-<company>-<role>/` |
 | 导出 PDF | `jadeai resume export <id> --format pdf --out file.pdf [--fit-one-page]` |
 | 列出模板 | `jadeai template list` |
 | 列出 profile | `jadeai profile list` |
 | 列出经历库 | `jadeai experience list [--type work\|project\|internship]` |
 | 创建经历 | `jadeai experience create --type <t> --data @./file.json` |
 | 更新简历元数据 | `jadeai resume update <id> --title "..." --template <id>` |
-| 调整主题 | `jadeai resume update <id> --theme ./theme.json` |
 | 增删隐藏 section | `jadeai section add/update/delete/reorder` |
 | 增删改 item | `jadeai item add/update/delete/reorder` |
 
@@ -175,8 +200,8 @@ pnpm install && pnpm setup && pnpm link --global
 → `jadeai template list [--locale zh|en]`
 
 ### "I want to create a new resume"
-→ `jadeai resume create --title "..." --template <id> [--profile <codename>]`
-创建后必须 `jadeai pull <id> --out ./jd-{company}-{role}/` 拉取到 JD 命名文件夹编辑。
+→ `jadeai resume create --title "..." --template <id> [--profile <codename>] --out ./jd-{company}-{role}/`
+创建简历并自动拉取 section JSONs + theme.json 到文件夹，一步到位。
 
 ### "I want to see all my resumes"
 → `jadeai resume list`
@@ -221,7 +246,8 @@ pdfinfo ./resume.pdf | grep Pages  # 必须 Pages: 1
 → `jadeai resume show <id> --json | jq '{template, themeConfig, language, sectionTypes: [.sections[].type]}'`
 
 ### "I need to bulk-edit resume content locally"
-→ `jadeai pull <id> --out <dir>` → 编辑 JSON → **BUDGET GATE** → `jadeai push <id> --from <dir>`
+→ `jadeai pull <id> --out <dir>` → 编辑 JSON（含 `theme.json`）→ **BUDGET GATE** → `jadeai push <id> --from <dir>`
+Pull 导出每个 section 为 `<type>.json`，同时导出 `theme.json`。Push 一步同步 section + theme。
 
 ### "I want to create a derivative / make it standalone"
 → `jadeai resume derive <root-id> --title "..."`
@@ -290,6 +316,7 @@ pdfinfo ./resume.pdf | grep Pages  # 必须 Pages: 1
 | 模板行数预算公式 | [ref/layout/layout.md](ref/layout/layout.md) |
 | 字符预算表 | [ref/layout/char-budget.md](ref/layout/char-budget.md) |
 | 每模板 section 分配表 | [ref/layout/content-budget.md](ref/layout/content-budget.md) |
+| **ThemeConfig CLI 排版接口** | [ref/layout/theme-cli.md](ref/layout/theme-cli.md) |
 | 独立模板预算文件 | [ref/layout/templates/](ref/layout/templates/) |
 | Section 类型/数据形状 | [ref/execution/execution.md](ref/execution/execution.md) |
 | 项目经历写作规范 | [ref/writing/project.md](ref/writing/project.md) |

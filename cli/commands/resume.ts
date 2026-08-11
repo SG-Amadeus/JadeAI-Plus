@@ -15,6 +15,7 @@ export async function resumeCreate(client: JadeClient, out: Output, args: Parsed
   const profileCodename = args.flags.profile as string | undefined;
   const sectionsFile = args.flags.sections as string | undefined;
   const experienceIds = args.flags['experience-ids'] as string | undefined;
+  const outDir = args.flags.out as string | undefined;
 
   const body: Record<string, unknown> = { title, template, language };
   if (profileCodename) body.profileCodename = profileCodename;
@@ -27,6 +28,20 @@ export async function resumeCreate(client: JadeClient, out: Output, args: Parsed
 
   const data = await client.post<{ id: string }>('/api/resume', body);
   out.result(data);
+
+  // Auto-pull to folder if --out is provided
+  if (outDir) {
+    // Dynamic import to avoid circular dependency
+    const { pull } = await import('./pull');
+    // Synthesize args for pull: positionals = ['pull', <id>], flags = { out: <dir> }
+    const pullArgs: ParsedArgs = {
+      positionals: ['pull', data.id],
+      flags: { out: outDir },
+      global: args.global,
+      help: false,
+    };
+    await pull(client, out, pullArgs);
+  }
 }
 
 // ── list ──

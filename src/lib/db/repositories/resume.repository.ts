@@ -23,7 +23,7 @@ export const resumeRepository = {
     return loadWithMerge(resume[0]);
   },
 
-  async create(data: { userId: string; title?: string; template?: string; language?: string }) {
+  async create(data: { userId: string; title?: string; template?: string; language?: string; themeConfig?: unknown }) {
     const id = crypto.randomUUID();
     await db.insert(resumes).values({
       id,
@@ -31,6 +31,7 @@ export const resumeRepository = {
       title: data.title || '未命名简历',
       template: data.template || 'minimal-blue',
       language: data.language || 'zh',
+      themeConfig: data.themeConfig ?? {},
     });
     return this.findById(id);
   },

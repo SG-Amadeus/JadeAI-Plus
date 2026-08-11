@@ -115,6 +115,7 @@ Options:
   --language <lang>    Content language: zh|en (default: zh)
   --profile <codename> Personal profile codename to prefill personal_info
   --sections <file>    JSON file with initial sections
+  --out <dir>          Auto-pull sections + theme.json into folder after creation
   --json               Machine-readable output`,
 
   'resume derive': `Create a derivative resume from a root. Personal info is inherited from the root.

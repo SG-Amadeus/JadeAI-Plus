@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
+import { validateSectionContent } from '@/lib/resume/validate';
 
 async function verifyOwnership(resumeId: string, request: NextRequest) {
   const fingerprint = getUserIdFromRequest(request);
@@ -38,6 +39,13 @@ export async function PUT(
   if (body.title !== undefined) updates.title = body.title;
   if (body.visible !== undefined) updates.visible = body.visible;
   if (body.content !== undefined) {
+    const validation = validateSectionContent(section.type, body.content);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: `${section.type}: ${validation.errors.join('; ')}` },
+        { status: 422 },
+      );
+    }
     updates.content = normalizeSectionContent(section.type, body.content);
   }
 

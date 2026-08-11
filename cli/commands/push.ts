@@ -27,8 +27,18 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
   }
 
   let count = 0;
+
+  // Handle theme.json first if present — one push syncs everything
+  const themeFile = resolve(dir, 'theme.json');
+  if (existsSync(themeFile)) {
+    const themeConfig = readJsonFile(themeFile);
+    await client.put(`/api/resume/${id}`, { themeConfig });
+    out.progress('Updated theme');
+  }
+
   for (const file of readdirSync(dir)) {
     if (!file.endsWith('.json')) continue;
+    if (file === 'theme.json') continue; // handled above
     const type = basename(file, '.json');
 
     // Personal info is managed exclusively through the web UI (Profile page).

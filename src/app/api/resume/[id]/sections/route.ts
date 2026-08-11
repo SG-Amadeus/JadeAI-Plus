@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { resumeRepository } from '@/lib/db/repositories/resume.repository';
+import { validateSectionContent } from '@/lib/resume/validate';
 
 export async function POST(
   request: NextRequest,
@@ -23,6 +24,17 @@ export async function POST(
   // Derivatives and profile-bound resumes cannot have their own personal_info section
   if (((resume as any).parentId || (resume as any).profileCodename) && type === 'personal_info') {
     return NextResponse.json({ error: 'Personal info is managed by a bound profile. Unbind the profile first.' }, { status: 400 });
+  }
+
+  // Validate section content structure before saving
+  if (content) {
+    const validation = validateSectionContent(type, content);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: `${type}: ${validation.errors.join('; ')}` },
+        { status: 422 },
+      );
+    }
   }
 
   const maxOrder = resume.sections.reduce((max: number, s: any) => Math.max(max, s.sortOrder), -1);

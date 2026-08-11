@@ -20,7 +20,14 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
   const outDir = args.flags.out as string;
   if (!outDir) throw usageError('--out <dir> is required');
 
-  const resume = await client.get<{ id: string; title: string; sections: Section[]; profileCodename?: string | null }>(`/api/resume/${id}`);
+  const resume = await client.get<{
+    id: string;
+    title: string;
+    template: string;
+    themeConfig?: Record<string, unknown>;
+    sections: Section[];
+    profileCodename?: string | null;
+  }>(`/api/resume/${id}`);
 
   const dir = resolve(outDir);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -34,6 +41,17 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
     writeOutput(JSON.stringify(section.content, null, 2), file);
     out.progress(`Wrote ${section.type}.json`);
     count++;
+  }
+
+  // Write theme.json alongside section JSONs for CLI layout adjustment
+  if (resume.themeConfig) {
+    // Normalize: DB may store as string or already-parsed object
+    const tc = typeof resume.themeConfig === 'string'
+      ? JSON.parse(resume.themeConfig)
+      : resume.themeConfig;
+    const themeFile = resolve(dir, 'theme.json');
+    writeOutput(JSON.stringify(tc, null, 2), themeFile);
+    out.progress('Wrote theme.json');
   }
 
   // Write profile reference if bound

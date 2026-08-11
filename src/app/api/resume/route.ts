@@ -4,6 +4,7 @@ import { profileRepository } from '@/lib/db/repositories/profile.repository';
 import { experienceRepository } from '@/lib/db/repositories/experience.repository';
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { DEFAULT_SECTIONS } from '@/lib/constants';
+import { DEFAULT_THEME } from '@/app/api/resume/[id]/export/utils';
 import { buildEducationContent, buildPersonalInfoContent } from '@/lib/profile/prefill';
 import { resumes } from '@/lib/db/schema';
 import { db } from '@/lib/db';
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       title: title || '未命名简历',
       template: template || 'minimal-blue',
       language: language || 'zh',
-      ...(themeConfig ? { themeConfig } : {}),
+      themeConfig: themeConfig || DEFAULT_THEME,
     });
 
     // Bind profile to resume (denormalized columns)
