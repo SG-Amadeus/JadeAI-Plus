@@ -105,6 +105,8 @@ async function applyStructuredData(resumeId: string, resume: any, data: any): Pr
         await resumeRepository.createSection({ resumeId, type: sectionType, title: sectionType, sortOrder: resume.sections.length, content });
       }
     } else if (sectionType === 'personal_info') {
+      // Profile-bound resumes: personal_info is resolved from profile at export time, never written by AI
+      if ((resume as any).profileCodename) continue;
       const content = normalizeSectionContent(sectionType, typeof value === 'object' ? value : { fullName: String(value) });
       if (existing) {
         await resumeRepository.updateSection(existing.id, { content });
@@ -123,6 +125,8 @@ async function applyAISections(resumeId: string, sections: { type: string; title
   if (!resume) return;
 
   for (const sec of sections) {
+    // Profile-bound: personal_info is resolved from profile, never written by AI
+    if (sec.type === 'personal_info' && (resume as any).profileCodename) continue;
     const existing = resume.sections.find((s: any) => s.type === sec.type);
     const content = normalizeSectionContent(sec.type, sec.content);
     if (existing) {

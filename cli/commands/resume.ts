@@ -38,18 +38,32 @@ export async function resumeList(client: JadeClient, out: Output, _args: ParsedA
 
 // ── show ──
 
+function maskPersonalInfo(data: any): any {
+  return {
+    ...data,
+    sections: (data.sections || []).map((s: any) =>
+      s.type === 'personal_info'
+        ? { ...s, content: { profileCodename: data.profileCodename ?? null } }
+        : s
+    ),
+  };
+}
+
 export async function resumeShow(client: JadeClient, out: Output, args: ParsedArgs): Promise<void> {
   const id = args.positionals[2];
   if (!id) throw usageError('resume-id is required');
-  const data = await client.get<{ id: string; title: string; parentId?: string | null; sections?: Array<{ id: string; type: string }> }>(`/api/resume/${id}`);
+  const data = await client.get<any>(`/api/resume/${id}`);
+
+  // Mask personal_info content — CLI never sees PII
+  const safe = maskPersonalInfo(data);
 
   const sectionFilter = args.flags.section as string | undefined;
-  if (sectionFilter && data.sections) {
-    const section = data.sections.find((s: { id: string; type: string }) => s.id === sectionFilter || s.type === sectionFilter);
+  if (sectionFilter && safe.sections) {
+    const section = safe.sections.find((s: any) => s.id === sectionFilter || s.type === sectionFilter);
     if (!section) throw usageError(`Section not found: ${sectionFilter}`);
     out.result(section);
   } else {
-    out.result(data);
+    out.result(safe);
   }
 }
 

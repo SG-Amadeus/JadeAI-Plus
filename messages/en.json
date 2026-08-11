@@ -96,6 +96,7 @@
     "templateRibbon": "Ribbon",
     "templateMosaic": "Mosaic",
     "templateMinimalBlue": "Minimal Blue",
+    "templateStandardBlue": "Standard Blue",
     "upload": {
       "fromTemplate": "From Template",
       "fromFile": "Upload File",
@@ -120,8 +121,9 @@
     "emptyExperienceLibraryHint": "Add work/project experiences in the library to import them when creating a resume"
   },
   "profiles": {
+    "nav": "Profiles",
     "title": "My Personal Profiles",
-    "subtitle": "Create a profile for each person, then reference them securely by codename. AI never sees your personal data — just tell it the codename when creating a resume.",
+    "subtitle": "Create profiles referenced by codename. AI never sees your personal data.",
     "create": "New Profile",
     "createTitle": "Create Personal Profile",
     "editTitle": "Edit Personal Profile",
@@ -164,7 +166,7 @@
   "experiences": {
     "nav": "Experience Library",
     "title": "My Experience Library",
-    "subtitle": "Record detailed work and project experiences. Pull them into any resume and let AI tailor for specific JDs.",
+    "subtitle": "Record work and project experiences. Pull them into any resume.",
     "add": "Add Experience",
     "tabWork": "Work Experience",
     "tabInternship": "Internships",

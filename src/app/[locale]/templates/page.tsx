@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Eye, Loader2 } from 'lucide-react';
+import { Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,13 +12,22 @@ import {
 } from '@/components/ui/dialog';
 import { TEMPLATES } from '@/lib/constants';
 import { useResume } from '@/hooks/use-resume';
-import { Link, useRouter } from '@/i18n/routing';
+import { Link, useRouter, usePathname } from '@/i18n/routing';
 import { useFingerprint } from '@/hooks/use-fingerprint';
 import { ResumePreview } from '@/components/preview/resume-preview';
 import { TourOverlay, type TourStepConfig } from '@/components/tour/tour-overlay';
 import { useTourStore, hasCompletedTour } from '@/stores/tour-store';
 import { templateLabelsMap as templateLabelKeys } from '@/lib/template-labels';
+import { cn } from '@/lib/utils';
 import type { Resume } from '@/types/resume';
+
+const SUB_NAV = [
+  { href: '/dashboard', label: 'dashboard.nav' },
+  { href: '/profiles', label: 'profiles.nav' },
+  { href: '/experiences', label: 'experiences.nav' },
+  { href: '/templates', label: 'templates.nav' },
+  { href: '/interview', label: 'interview.nav' },
+];
 
 const TEMPLATES_TOUR_STEPS: TourStepConfig[] = [
   { target: 'tpl-preview', placement: 'bottom', i18nKey: 'tplPreview' },
@@ -225,6 +234,7 @@ function buildMockResume(template: string): Resume {
 export default function TemplatesPage() {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const { createResume } = useResume();
   const { fingerprint } = useFingerprint();
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
@@ -252,18 +262,29 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <Link
-          href="/dashboard"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('common.back')}
-        </Link>
+      {/* Sub-navigation */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+        {SUB_NAV.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              pathname.startsWith(item.href)
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+                : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+            )}
+          >
+            {t(item.label)}
+          </Link>
+        ))}
+      </div>
+
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-foreground">
           {t('templates.title')}
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 max-w-xl text-sm text-zinc-500">
           {t('templates.subtitle')}
         </p>
       </div>

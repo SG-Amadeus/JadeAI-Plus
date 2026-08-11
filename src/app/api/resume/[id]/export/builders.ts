@@ -60,6 +60,7 @@ import { buildZigzagHtml } from './templates/zigzag';
 import { buildRibbonHtml } from './templates/ribbon';
 import { buildMosaicHtml } from './templates/mosaic';
 import { buildMinimalBlueHtml } from './templates/minimal-blue';
+import { buildStandardBlueHtml } from './templates/standard-blue';
 
 // Templates whose ENTIRE page is dark (not just header/sidebar).
 // Body background must match so the PDF page doesn't show white gaps.
@@ -135,6 +136,7 @@ const TEMPLATE_BUILDERS: Record<string, (r: ResumeWithSections) => string> = {
   ribbon: buildRibbonHtml,
   mosaic: buildMosaicHtml,
   'minimal-blue': buildMinimalBlueHtml,
+  'standard-blue': buildStandardBlueHtml,
 };
 
 function isValidQrUrl(str: string): boolean {

@@ -19,8 +19,8 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
   const dir = resolve(fromDir);
   if (!existsSync(dir)) throw usageError(`Directory not found: ${dir}`);
 
-  // Get current resume (sections + profile binding)
-  const resume = await client.get<{ sections: Section[]; profileCodename?: string | null }>(`/api/resume/${id}`);
+  // Get current resume sections
+  const resume = await client.get<{ sections: Section[] }>(`/api/resume/${id}`);
   const typeToId = new Map<string, string>();
   for (const s of resume.sections) {
     typeToId.set(s.type, s.id);
@@ -31,9 +31,10 @@ export async function push(client: JadeClient, out: Output, args: ParsedArgs): P
     if (!file.endsWith('.json')) continue;
     const type = basename(file, '.json');
 
-    if (type === 'personal_info' && resume.profileCodename) {
-      out.progress(`Skipping ${file}: personal_info is managed by profile "${resume.profileCodename}"`);
-      continue;
+    // Personal info is managed exclusively through the web UI (Profile page).
+    // CLI never sends PII — reject any personal_info.json file.
+    if (type === 'personal_info') {
+      throw usageError(`${file} cannot be pushed: personal info is managed through the web UI (Profile page). Delete this file and use --profile to bind a profile instead.`);
     }
 
     const sid = typeToId.get(type);

@@ -112,10 +112,36 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Clear denormalized profileCodename on all bound resumes before deleting
+    // Materialize personal_info snapshots into bound resumes lacking a section,
+    // then clear the denormalized profileCodename on all bound resumes
     const { resumes } = await import('@/lib/db/schema');
+    const { resumeSections } = await import('@/lib/db/schema');
     const { db } = await import('@/lib/db');
     const { eq } = await import('drizzle-orm');
+    const { buildPersonalInfoContent } = await import('@/lib/profile/prefill');
+
+    // Find all bound resumes
+    const boundResumes = await db.select().from(resumes).where(eq(resumes.profileId, profileId));
+    for (const r of boundResumes) {
+      // Check if resume already has a personal_info section
+      const sections = await db.select().from(resumeSections)
+        .where(eq(resumeSections.resumeId, r.id));
+      const hasPI = sections.some((s: any) => s.type === 'personal_info');
+      if (!hasPI) {
+        const lang = r.language || 'zh';
+        const piLabel = lang === 'en' ? 'Personal Info' : '个人信息';
+        await db.insert(resumeSections).values({
+          id: crypto.randomUUID(),
+          resumeId: r.id,
+          type: 'personal_info',
+          title: piLabel,
+          sortOrder: -1,
+          visible: true,
+          content: buildPersonalInfoContent(profile.data as Record<string, unknown>),
+        } as any);
+      }
+    }
+
     await db.update(resumes)
       .set({ profileCodename: null } as any)
       .where(eq(resumes.profileId, profileId));

@@ -65,3 +65,28 @@ export function stripPersonalInfoForAI(content: unknown): {
   const { sanitized, stripped } = stripFields(content as Record<string, unknown>);
   return { content: sanitized, stripped };
 }
+
+// ─── Export / public-share sanitization ─────────────────────────
+
+/** Demographic fields stripped from personal_info in export and public share.
+ *  These enable discrimination and have no place on a professional resume.
+ *  Standard contact fields (fullName, jobTitle, email, phone, location,
+ *  website, linkedin, github) are preserved — the document must still
+ *  function as a resume. */
+export const EXPORT_PII_STRIP_FIELDS: ReadonlySet<string> = new Set([
+  'age', 'gender', 'politicalStatus', 'ethnicity', 'hometown',
+  'maritalStatus', 'wechat', 'avatar',
+]);
+
+/** Strip sensitive demographic fields from personal_info content.
+ *  Returns a new object — never mutates the input.
+ *  Used by both the export pipeline and the public share endpoint. */
+export function sanitizePersonalInfoForExport(content: Record<string, unknown>): Record<string, unknown> {
+  const cleaned: Record<string, unknown> = {};
+  for (const key of Object.keys(content)) {
+    if (!EXPORT_PII_STRIP_FIELDS.has(key)) {
+      cleaned[key] = content[key];
+    }
+  }
+  return cleaned;
+}

@@ -9,26 +9,7 @@ async function loadWithMerge(resume: any) {
     .where(eq(resumeSections.resumeId, resume.id))
     .orderBy(resumeSections.sortOrder);
 
-  if (!resume.parentId) return { ...resume, sections };
-
-  // Inject root's personal_info as an inherited section
-  const root = await db.select().from(resumes).where(eq(resumes.id, resume.parentId)).limit(1);
-  if (!root[0] || root[0].userId !== resume.userId) return { ...resume, sections };
-
-  const rootSections = await db.select().from(resumeSections)
-    .where(eq(resumeSections.resumeId, root[0].id));
-  const personalInfo = rootSections.find((s: any) => s.type === 'personal_info');
-  if (!personalInfo) return { ...resume, sections };
-
-  const inherited = {
-    ...personalInfo,
-    id: `${INHERITED_PREFIX}${root[0].id}:${personalInfo.id}`,
-    resumeId: resume.id,
-    inherited: true,
-    inheritedFrom: root[0].id,
-  };
-
-  return { ...resume, sections: [inherited, ...sections] };
+  return { ...resume, sections };
 }
 
 export const resumeRepository = {
@@ -85,6 +66,7 @@ export const resumeRepository = {
     // Derivative of a derivative keeps the same parent
     const parentId = original.parentId ?? null;
     const derivedAt = parentId ? new Date() : null;
+    const orig = original as any;
 
     await db.insert(resumes).values({
       id: newId,
@@ -95,13 +77,16 @@ export const resumeRepository = {
       language: original.language,
       parentId,
       derivedAt,
+      // Copy profile reference — each resume references the profile independently
+      profileCodename: orig.profileCodename ?? null,
+      profileId: orig.profileId ?? null,
     } as any);
 
     for (const section of original.sections) {
-      // Skip inherited sections — they reference the root
+      // Skip inherited sections — they reference the root (transitional, harmless)
       if ((section as any).inherited) continue;
-      // If duplicating a derivative, skip personal_info (it's inherited from root)
-      if (parentId && section.type === 'personal_info') continue;
+      // Skip personal_info when the original is profile-bound
+      if (orig.profileCodename && section.type === 'personal_info') continue;
 
       await db.insert(resumeSections).values({
         id: crypto.randomUUID(),
@@ -126,6 +111,7 @@ export const resumeRepository = {
     if (root[0].parentId) return { error: 'CANNOT_DERIVE_FROM_DERIVATIVE' };
 
     const newId = crypto.randomUUID();
+    const rootProfile = root[0] as any;
     await db.insert(resumes).values({
       id: newId,
       userId,
@@ -135,15 +121,18 @@ export const resumeRepository = {
       themeConfig: root[0].themeConfig,
       parentId: rootId,
       derivedAt: new Date(),
+      // Copy profile reference — each resume references the profile independently
+      profileCodename: rootProfile.profileCodename ?? null,
+      profileId: rootProfile.profileId ?? null,
     } as any);
 
-    // Copy all sections EXCEPT personal_info (inherited from root)
+    // Copy all sections EXCEPT personal_info when root is profile-bound
     const sections = await db.select().from(resumeSections)
       .where(eq(resumeSections.resumeId, rootId))
       .orderBy(resumeSections.sortOrder);
 
     for (const section of sections) {
-      if (section.type === 'personal_info') continue;
+      if (section.type === 'personal_info' && rootProfile.profileCodename) continue;
       await db.insert(resumeSections).values({
         id: crypto.randomUUID(),
         resumeId: newId,
@@ -163,35 +152,15 @@ export const resumeRepository = {
     if (!resume[0]) return null;
     if (!resume[0].parentId) return { error: 'ALREADY_ROOT' };
 
-    // Materialize root's personal_info as a real section
-    const root = await db.select().from(resumes).where(eq(resumes.id, resume[0].parentId)).limit(1);
-    if (root[0]) {
-      const rootSections = await db.select().from(resumeSections)
-        .where(eq(resumeSections.resumeId, root[0].id));
-      const personalInfo = rootSections.find((s: any) => s.type === 'personal_info');
-      if (personalInfo) {
-        // Insert at sortOrder -1 so it comes first after reorder
-        await db.insert(resumeSections).values({
-          id: crypto.randomUUID(),
-          resumeId: id,
-          type: 'personal_info',
-          title: personalInfo.title,
-          sortOrder: -1,
-          visible: personalInfo.visible,
-          content: personalInfo.content,
-        } as any);
-
-        // Normalize sort orders
-        const sections = await db.select().from(resumeSections)
-          .where(eq(resumeSections.resumeId, id))
-          .orderBy(resumeSections.sortOrder);
-        for (let i = 0; i < sections.length; i++) {
-          if (sections[i].sortOrder !== i) {
-            await db.update(resumeSections)
-              .set({ sortOrder: i, updatedAt: new Date() })
-              .where(eq(resumeSections.id, sections[i].id));
-          }
-        }
+    // Normalize sort orders for all sections
+    const sections = await db.select().from(resumeSections)
+      .where(eq(resumeSections.resumeId, id))
+      .orderBy(resumeSections.sortOrder);
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].sortOrder !== i) {
+        await db.update(resumeSections)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(resumeSections.id, sections[i].id));
       }
     }
 

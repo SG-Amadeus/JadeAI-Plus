@@ -6,6 +6,8 @@ import { generateHtml } from './builders';
 import { generatePlainText } from './plain-text';
 import { generateDocxBuffer } from './docx';
 import { EXPORT_SECTION_TYPES } from '@/lib/constants';
+import { sanitizePersonalInfoForExport } from './utils';
+import { injectResolvedPersonalInfo } from '@/lib/resume/resolve-personal-info';
 
 // Chromium download + PDF render needs more time on Vercel serverless
 export const maxDuration = 60;
@@ -30,6 +32,19 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Resolve personal_info from bound profile (if any) — injected as virtual section.
+    // Falls back to existing section data for non-profile resumes.
+    const resolved = await injectResolvedPersonalInfo(resume as any);
+    resume.sections = resolved.sections;
+
+    // Sanitize PII from personal_info before any format touches the data.
+    // This is the single choke point — all export formats (json, txt, html, pdf, docx)
+    // receive a sanitized copy of the resume.
+    resume.sections = resume.sections.map((s: any) => {
+      if (s.type !== 'personal_info') return s;
+      return { ...s, content: sanitizePersonalInfoForExport(s.content || {}) };
+    });
+
     const format = request.nextUrl.searchParams.get('format') || 'json';
     const title = resume.title || 'resume';
     const now = new Date();
@@ -48,8 +63,6 @@ export async function GET(
         return NextResponse.json({
           version: 2,
           exportedAt: new Date().toISOString(),
-          profileCodename: (resume as any).profileCodename || null,
-          profileId: (resume as any).profileId || null,
           title: resume.title,
           template: resume.template,
           language: (resume as any).language || 'zh',

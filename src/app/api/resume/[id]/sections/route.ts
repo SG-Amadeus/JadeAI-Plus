@@ -20,9 +20,9 @@ export async function POST(
     return NextResponse.json({ error: 'type and title are required' }, { status: 400 });
   }
 
-  // Derivatives cannot have their own personal_info — it's inherited from root
-  if ((resume as any).parentId && type === 'personal_info') {
-    return NextResponse.json({ error: 'Personal info lives on the root resume. Edit the root to update it.' }, { status: 400 });
+  // Derivatives and profile-bound resumes cannot have their own personal_info section
+  if (((resume as any).parentId || (resume as any).profileCodename) && type === 'personal_info') {
+    return NextResponse.json({ error: 'Personal info is managed by a bound profile. Unbind the profile first.' }, { status: 400 });
   }
 
   const maxOrder = resume.sections.reduce((max: number, s: any) => Math.max(max, s.sortOrder), -1);

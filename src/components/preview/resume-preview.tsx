@@ -60,6 +60,7 @@ import { ZigzagTemplate } from './templates/zigzag';
 import { RibbonTemplate } from './templates/ribbon';
 import { MosaicTemplate } from './templates/mosaic';
 import { MinimalBlueTemplate } from './templates/minimal-template-blue-resume';
+import { StandardBlueTemplate } from './templates/standard-template-blue-resume';
 
 interface ResumePreviewProps {
   resume: Resume;
@@ -123,6 +124,7 @@ const templateMap: Record<string, React.ComponentType<{ resume: Resume }>> = {
   ribbon: RibbonTemplate,
   mosaic: MosaicTemplate,
   'minimal-blue': MinimalBlueTemplate,
+  'standard-blue': StandardBlueTemplate,
 };
 
 const FONT_SIZE_SCALE: Record<string, { body: string; h1: string; h2: string; h3: string }> = {

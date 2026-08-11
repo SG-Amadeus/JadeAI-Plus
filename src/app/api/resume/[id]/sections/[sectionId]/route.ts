@@ -27,7 +27,7 @@ export async function PUT(
   // Guard: personal_info is managed by profile — reject CLI/API modifications
   if (section.type === 'personal_info' && (resume as any).profileCodename) {
     return NextResponse.json(
-      { error: `Personal info is managed by profile "${(resume as any).profileCodename}". Unbind the profile via UI first.` },
+      { error: 'Personal info is managed by a bound profile. Unbind the profile first.' },
       { status: 403 },
     );
   }
@@ -65,7 +65,7 @@ export async function DELETE(
   // Guard: personal_info is managed by profile — reject CLI/API deletion
   if (section.type === 'personal_info' && (resume as any).profileCodename) {
     return NextResponse.json(
-      { error: `Personal info is managed by profile "${(resume as any).profileCodename}". Unbind the profile via UI first.` },
+      { error: 'Personal info is managed by a bound profile. Unbind the profile first.' },
       { status: 403 },
     );
   }

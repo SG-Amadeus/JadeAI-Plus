@@ -41,6 +41,7 @@ export const TEMPLATES = [
   // Batch 6: Layout Variants
   'sidebar', 'card', 'zigzag', 'ribbon', 'mosaic',
   'minimal-blue',
+  'standard-blue',
 ] as const;
 export type Template = (typeof TEMPLATES)[number];
 
@@ -61,10 +62,16 @@ export const TWO_COLUMN_TEMPLATES: Record<string, { bg: string; width: string }>
 
 /** Section types included in JSON export (experiences only, no personal_info) */
 export const EXPORT_SECTION_TYPES: ReadonlySet<string> = new Set([
+  'summary',
   'work_experience',
   'education',
   'projects',
   'skills',
+  'certifications',
+  'languages',
+  'github',
+  'custom',
+  'qr_codes',
 ]);
 
 export const AUTOSAVE_DELAY = 500;

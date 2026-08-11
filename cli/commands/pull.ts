@@ -20,18 +20,27 @@ export async function pull(client: JadeClient, out: Output, args: ParsedArgs): P
   const outDir = args.flags.out as string;
   if (!outDir) throw usageError('--out <dir> is required');
 
-  const resume = await client.get<{ id: string; title: string; sections: Section[] }>(`/api/resume/${id}`);
+  const resume = await client.get<{ id: string; title: string; sections: Section[]; profileCodename?: string | null }>(`/api/resume/${id}`);
 
   const dir = resolve(outDir);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
   let count = 0;
   for (const section of resume.sections) {
-    if (section.inherited) continue; // skip inherited personal_info on derivatives
+    if (section.inherited) continue;
+    // Personal info never leaves the server — write only a profile reference
+    if (section.type === 'personal_info') continue;
     const file = resolve(dir, `${section.type}.json`);
     writeOutput(JSON.stringify(section.content, null, 2), file);
     out.progress(`Wrote ${section.type}.json`);
     count++;
+  }
+
+  // Write profile reference if bound
+  if (resume.profileCodename) {
+    const profileFile = resolve(dir, '_profile.txt');
+    writeOutput(resume.profileCodename + '\n', profileFile);
+    out.progress(`Wrote _profile.txt (profile: ${resume.profileCodename})`);
   }
 
   out.success(`Pulled ${count} sections from "${id}" to ${dir}/`);

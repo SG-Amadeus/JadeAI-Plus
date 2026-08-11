@@ -61,6 +61,7 @@ import { ZigzagTemplate } from '@/components/preview/templates/zigzag';
 import { RibbonTemplate } from '@/components/preview/templates/ribbon';
 import { MosaicTemplate } from '@/components/preview/templates/mosaic';
 import { MinimalBlueTemplate } from '@/components/preview/templates/minimal-template-blue-resume';
+import { StandardBlueTemplate } from '@/components/preview/templates/standard-template-blue-resume';
 
 const templateMap: Record<string, React.ComponentType<{ resume: Resume }>> = {
   classic: ClassicTemplate, modern: ModernTemplate, minimal: MinimalTemplate,
@@ -81,6 +82,7 @@ const templateMap: Record<string, React.ComponentType<{ resume: Resume }>> = {
   engineer: EngineerTemplate, sidebar: SidebarTemplate, card: CardTemplate,
   zigzag: ZigzagTemplate, ribbon: RibbonTemplate, mosaic: MosaicTemplate,
   'minimal-blue': MinimalBlueTemplate,
+  'standard-blue': StandardBlueTemplate,
 };
 
 export async function renderPreviewHtml(resume: Resume): Promise<string> {

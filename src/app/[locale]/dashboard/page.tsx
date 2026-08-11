@@ -27,8 +27,16 @@ import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { TourOverlay, type TourStepConfig } from '@/components/tour/tour-overlay';
 import { useTourStore, hasCompletedTour } from '@/stores/tour-store';
 import { cn } from '@/lib/utils';
-import { useRouter } from '@/i18n/routing';
+import { Link, useRouter, usePathname } from '@/i18n/routing';
 import type { Resume } from '@/types/resume';
+
+const SUB_NAV = [
+  { href: '/dashboard', label: 'dashboard.nav' },
+  { href: '/profiles', label: 'profiles.nav' },
+  { href: '/experiences', label: 'experiences.nav' },
+  { href: '/templates', label: 'templates.nav' },
+  { href: '/interview', label: 'interview.nav' },
+];
 
 type SortOption = 'lastEdited' | 'created' | 'nameAsc' | 'nameDesc';
 type ViewMode = 'grid' | 'list';
@@ -70,12 +78,14 @@ function sortResumes(resumes: Resume[], sort: SortOption): Resume[] {
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
+  const gt = useTranslations();
   const { resumes, isLoading, fetchResumes, createResume, deleteResume, renameResume, duplicateResume } = useResume();
   const { openModal, activeModal, closeModal } = useUIStore();
   const { fingerprint, isLoading: fpLoading } = useFingerprint();
   const { authEnabled } = useRuntimeConfig();
 
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('lastEdited');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -132,6 +142,24 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Sub-navigation */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+        {SUB_NAV.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              pathname.startsWith(item.href)
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+                : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+            )}
+          >
+            {gt(item.label)}
+          </Link>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>

@@ -18,7 +18,12 @@ export async function GET(request: NextRequest) {
     }
 
     const allResumes = await resumeRepository.findAllByUserId(user.id);
-    return NextResponse.json(allResumes);
+    // Strip internal credentials from list response
+    const safe = allResumes.map((r: any) => {
+      const { userId, sharePassword, shareToken, ...rest } = r;
+      return rest;
+    });
+    return NextResponse.json(safe);
   } catch (error) {
     console.error('GET /api/resume error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -43,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (profileCodename && typeof profileCodename === 'string') {
       const profile = await profileRepository.findByCodename(user.id, profileCodename);
       if (!profile) {
-        return NextResponse.json({ error: `Unknown profile codename: ${profileCodename}` }, { status: 400 });
+        return NextResponse.json({ error: 'Unknown profile codename' }, { status: 400 });
       }
       profileId = profile.id;
       resolvedProfileData = profile.data as Record<string, unknown>;
@@ -102,17 +107,10 @@ export async function POST(request: NextRequest) {
     if (resume) {
       if (Array.isArray(sections) && sections.length > 0) {
         // Import mode: use provided sections
-        // If profile is bound, personal_info and education come from the profile — skip them in the import
+        // If profile is bound, education comes from the profile; personal_info is NOT copied —
+        // the profile reference (profileCodename/profileId) is the source of truth, resolved at export time.
         let sortOrder = 0;
         if (profileId && resolvedProfileData) {
-          const piLabel = resume.language === 'en' ? 'Personal Info' : '个人信息';
-          await resumeRepository.createSection({
-            resumeId: resume.id,
-            type: 'personal_info',
-            title: piLabel,
-            sortOrder: sortOrder++,
-            content: buildPersonalInfoContent(resolvedProfileData),
-          });
           const eduLabel = resume.language === 'en' ? 'Education' : '教育背景';
           await resumeRepository.createSection({
             resumeId: resume.id,
@@ -123,7 +121,7 @@ export async function POST(request: NextRequest) {
           });
         }
         for (const s of sections) {
-          if (profileId && (s.type === 'personal_info' || s.type === 'education')) continue; // profile provides these
+          if (profileId && (s.type === 'personal_info' || s.type === 'education')) continue;
           await resumeRepository.createSection({
             resumeId: resume.id,
             type: s.type,
@@ -142,9 +140,9 @@ export async function POST(request: NextRequest) {
           let content: unknown = {};
 
           if (s.type === 'personal_info') {
-            content = resolvedProfileData
-              ? buildPersonalInfoContent(resolvedProfileData)
-              : { fullName: '', jobTitle: '', email: '', phone: '', location: '' };
+            // Profile-bound: no personal_info section — resolved at export time from profile
+            if (resolvedProfileData) continue;
+            content = { fullName: '', jobTitle: '', email: '', phone: '', location: '' };
           } else if (s.type === 'summary') {
             content = { text: '' };
           } else if (s.type === 'work_experience') {
@@ -172,7 +170,8 @@ export async function POST(request: NextRequest) {
       }
 
       const fullResume = await resumeRepository.findById(resume.id);
-      return NextResponse.json(fullResume, { status: 201 });
+      const { userId, sharePassword, shareToken, ...safeResume } = fullResume!;
+      return NextResponse.json(safeResume, { status: 201 });
     }
 
     return NextResponse.json({ error: 'Failed to create resume' }, { status: 500 });

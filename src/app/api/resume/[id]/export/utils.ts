@@ -6,6 +6,8 @@ import type {
   SummaryContent,
 } from '@/types/resume';
 
+export { sanitizePersonalInfoForExport } from '@/lib/resume/sanitize';
+
 export type ResumeWithSections = NonNullable<Awaited<ReturnType<typeof resumeRepository.findById>>>;
 export type Section = ResumeWithSections['sections'][number];
 

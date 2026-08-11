@@ -2,20 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, ArrowLeft, Shield } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProfiles } from '@/hooks/use-profiles';
 import { ProfileList } from '@/components/profiles/profile-list';
 import { ProfileFormDialog } from '@/components/profiles/profile-form-dialog';
-import { useRouter } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
+import { cn } from '@/lib/utils';
+
+const SUB_NAV = [
+  { href: '/dashboard', label: 'dashboard.nav' },
+  { href: '/profiles', label: 'profiles.nav' },
+  { href: '/experiences', label: 'experiences.nav' },
+  { href: '/templates', label: 'templates.nav' },
+  { href: '/interview', label: 'interview.nav' },
+];
 
 type Profile = { id: string; codename: string; data: Record<string, unknown> };
 
 export default function ProfilesPage() {
   const t = useTranslations('profiles');
   const ct = useTranslations('common');
-  const router = useRouter();
+  const gt = useTranslations();
+  const pathname = usePathname();
   const { profiles, isLoading, fetchProfiles, createProfile, updateProfile, deleteProfile } = useProfiles();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
@@ -36,68 +46,55 @@ export default function ProfilesPage() {
   };
 
   return (
-    <div className="min-h-[100dvh]">
-      {/* Hero header */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-brand-muted/50 to-transparent pb-8 pt-12 dark:from-brand-muted/10">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/')}
-              className="cursor-pointer text-zinc-500 hover:text-zinc-700"
-            >
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              {ct('back')}
-            </Button>
-          </div>
+    <div>
+      {/* Sub-navigation */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+        {SUB_NAV.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              pathname.startsWith(item.href)
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+                : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+            )}
+          >
+            {gt(item.label)}
+          </Link>
+        ))}
+      </div>
 
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-foreground sm:text-4xl">
-                {t('title')}
-              </h1>
-              <p className="mt-2 max-w-xl text-sm text-zinc-500 sm:text-base">
-                {t('subtitle')}
-              </p>
-
-              {/* Security badge */}
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300">
-                <Shield className="h-3.5 w-3.5" />
-                {t('securityBadge')}
-              </div>
-            </div>
-
-            <Button
-              onClick={() => { setEditingProfile(null); setDialogOpen(true); }}
-              size="lg"
-              className="cursor-pointer gap-2 bg-brand hover:bg-brand-hover sm:self-end"
-            >
-              <Plus className="h-5 w-5" />
-              {t('create')}
-            </Button>
-          </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-foreground">{t('title')}</h1>
+          <p className="mt-1 max-w-xl text-sm text-zinc-500">{t('subtitle')}</p>
         </div>
+        <Button
+          onClick={() => { setEditingProfile(null); setDialogOpen(true); }}
+          className="cursor-pointer gap-2 bg-brand hover:bg-brand-hover"
+        >
+          <Plus className="h-4 w-4" />
+          {t('create')}
+        </Button>
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        {isLoading ? (
-          <div className="flex gap-5 overflow-hidden">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-64 w-[300px] shrink-0 rounded-2xl sm:w-[340px]" />
-            ))}
-          </div>
-        ) : (
-          <ProfileList
-            profiles={profiles}
-            onEdit={(profile) => { setEditingProfile(profile); setDialogOpen(true); }}
-            onDelete={(id) => {
-              if (confirm(ct('delete') + '?')) deleteProfile(id);
-            }}
-          />
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex gap-5 overflow-hidden">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-64 w-[300px] shrink-0 rounded-2xl sm:w-[340px]" />
+          ))}
+        </div>
+      ) : (
+        <ProfileList
+          profiles={profiles}
+          onEdit={(profile) => { setEditingProfile(profile); setDialogOpen(true); }}
+          onDelete={(id) => {
+            if (confirm(ct('delete') + '?')) deleteProfile(id);
+          }}
+        />
+      )}
 
       <ProfileFormDialog
         open={dialogOpen}

@@ -361,17 +361,10 @@ function tryParseImage(avatar: string): { data: Buffer; ext: 'png' | 'jpg' | 'gi
 
 function buildContactParts(info: PersonalInfoContent): string[] {
   const parts: string[] = [];
-  if (info.age) parts.push(info.age);
-  if (info.gender) parts.push(info.gender);
-  if (info.politicalStatus) parts.push(info.politicalStatus);
-  if (info.ethnicity) parts.push(info.ethnicity);
-  if (info.hometown) parts.push(info.hometown);
-  if (info.maritalStatus) parts.push(info.maritalStatus);
   if (info.yearsOfExperience) parts.push(info.yearsOfExperience);
   if (info.educationLevel) parts.push(info.educationLevel);
   if (info.email) parts.push(info.email);
   if (info.phone) parts.push(info.phone);
-  if (info.wechat) parts.push(info.wechat);
   if (info.location) parts.push(info.location);
   if (info.website) parts.push(info.website);
   if (info.linkedin) parts.push(info.linkedin);
@@ -903,17 +896,10 @@ function buildSidebarHeader(info: PersonalInfoContent, theme: DocxTheme): DocxCh
   }
 
   const contactFields: [string, string | undefined][] = [
-    ['Age', info.age],
-    ['Gender', info.gender],
-    ['Political', info.politicalStatus],
-    ['Ethnicity', info.ethnicity],
-    ['Hometown', info.hometown],
-    ['Marital', info.maritalStatus],
     ['Experience', info.yearsOfExperience],
     ['Education', info.educationLevel],
     ['Email', info.email],
     ['Phone', info.phone],
-    ['WeChat', info.wechat],
     ['Location', info.location],
     ['Web', info.website],
     ['LinkedIn', info.linkedin],
