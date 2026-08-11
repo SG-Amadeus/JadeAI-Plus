@@ -8,6 +8,7 @@ import { generateDocxBuffer } from './docx';
 import { EXPORT_SECTION_TYPES } from '@/lib/constants';
 import { sanitizePersonalInfoForExport } from './utils';
 import { injectResolvedPersonalInfo } from '@/lib/resume/resolve-personal-info';
+import { validateResumeBudget } from '@/lib/resume/budget-validate';
 
 // Chromium download + PDF render needs more time on Vercel serverless
 export const maxDuration = 60;
@@ -44,6 +45,13 @@ export async function GET(
       if (s.type !== 'personal_info') return s;
       return { ...s, content: sanitizePersonalInfoForExport(s.content || {}) };
     });
+
+    // Preflight mode: validate budget without generating export
+    const preflight = request.nextUrl.searchParams.get('preflight') === 'true';
+    if (preflight) {
+      const result = validateResumeBudget(resume as any);
+      return NextResponse.json(result);
+    }
 
     const format = request.nextUrl.searchParams.get('format') || 'json';
     const title = resume.title || 'resume';
@@ -104,15 +112,20 @@ export async function GET(
       }
       case 'pdf': {
         const fitOnePage = request.nextUrl.searchParams.get('fitOnePage') === 'true';
+        // Run budget preflight and attach warnings as response header
+        const budget = validateResumeBudget(resume as any);
         const pdfHtml = await generateHtml(resume, true);
         const pdfBuffer = await generatePdf(pdfHtml, { fitOnePage });
-        return new NextResponse(new Uint8Array(pdfBuffer), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.pdf"`,
-          },
-        });
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.pdf"`,
+        };
+        if (budget.warnings.length > 0) {
+          headers['X-Budget-Warnings'] = JSON.stringify(budget.warnings.map(w => `${w.severity}: ${w.message}`));
+          headers['X-Budget-Ok'] = budget.ok ? 'true' : 'false';
+          headers['X-Budget-Lines'] = `${budget.contentLinesEstimated}/${budget.contentLinesAvailable}`;
+        }
+        return new NextResponse(new Uint8Array(pdfBuffer), { status: 200, headers });
       }
       default: {
         return NextResponse.json(

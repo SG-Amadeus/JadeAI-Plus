@@ -70,7 +70,7 @@ export class JadeClient {
   }
 
   /** Fetch raw bytes (for export) */
-  async fetchBlob(path: string): Promise<{ data: Buffer; filename: string; contentType: string }> {
+  async fetchBlob(path: string): Promise<{ data: Buffer; filename: string; contentType: string; headers: Headers }> {
     const url = `${this.baseUrl}${path}`;
     let res: Response;
     try {
@@ -96,6 +96,7 @@ export class JadeClient {
     const m = disp.match(/filename="?([^"]+)"?/);
     return {
       data: buf,
+      headers: res.headers,
       filename: m?.[1] || 'export',
       contentType: res.headers.get('content-type') || 'application/octet-stream',
     };

@@ -71,6 +71,10 @@ export class Output {
     if (!this.opts.json) console.error(red(`✗ ${msg}`));
   }
 
+  warn(msg: string): void {
+    if (!this.opts.json) console.error(dim(`⚠ ${msg}`));
+  }
+
   /** Print result in JSON mode, or just output raw text in human mode */
   text(data: string): void {
     if (this.opts.json) {

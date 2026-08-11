@@ -57,7 +57,7 @@ jadeai resume show <resume-id> --json | jq '{profileCodename, hasPersonalInfo: (
 
 ## 🟢 Budget Gate — MANDATORY before every push/export
 
-**成本模型不可跳过。** 每个产出 PDF 的工作流必须通过三道检查点。
+**成本模型不可跳过。** 每个产出 PDF 的工作流必须通过五道检查点。
 
 ### Checkpoint 1: Identify Template Capacity
 
@@ -69,7 +69,25 @@ jadeai resume show <id> --json | jq '{template, themeConfig, language}'
 - 记下 `content_lines` 和 `chars_per_line`（中文 ≈ 英文的一半）
 - 如果 themeConfig 非默认值，用 [ref/layout/method.md](ref/layout/method.md) 重新计算
 
-### Checkpoint 2: Inventory & Count
+### Checkpoint 2: Field-Level Character Limits
+
+**minimal-blue 和 standard-blue 模板有 CSS truncation**——公司名、职位、部门、项目名、URL 超长会被截断。检查每个字段是否超过 [ref/layout/field-limits.md](ref/layout/field-limits.md) 中的上限：
+
+| 模板 | 公司名上限 (EN/ZH) | 部门/职位上限 | 项目名上限 | URL 上限 |
+|---|---|---|---|---|
+| standard-blue | 35 / 20 | 30 / 17 | 30 / 17 | 40 |
+| minimal-blue | 37 / 20 | 31 / 17 | 31 / 17 | 39 |
+
+```bash
+# 快速检查字段长度
+jadeai pull <id> --out ./check/
+cat ./check/work_experience.json | jq '[.items[] | {company: (.company|length), position: (.position|length), department: (.department|length)}]'
+cat ./check/projects.json | jq '[.items[] | {name: (.name|length), url: (.url|length)}]'
+```
+
+超长处理：缩写公司名（北京字节跳动科技有限公司 → 字节跳动）、删除部门行、合并职位到公司名、或切换到 classic/ats 模板。
+
+### Checkpoint 3: Inventory & Count
 
 ```bash
 jadeai pull <id> --out ./jd-<company>-<role>/
@@ -81,7 +99,7 @@ jadeai pull <id> --out ./jd-<company>-<role>/
 - 估算行数（参考 [ref/layout/content-budget.md](ref/layout/content-budget.md)）
 - 中文规则：每条 bullet ≈ 2 行，描述每 54 字符 ≈ 1-2 行
 
-### Checkpoint 3: Compare & Cut
+### Checkpoint 4: Compare & Cut
 
 将统计结果与 [ref/layout/content-budget.md](ref/layout/content-budget.md) 中的分配表对比：
 - **未超预算** → 继续 push
@@ -99,7 +117,19 @@ jadeai pull <id> --out ./jd-<company>-<role>/
 8. personal_info                    → 永不修改
 ```
 
-### Checkpoint 4: Typography Adjustment（内容裁剪不够时）
+### Checkpoint 5: Preflight Validation（服务端校验）
+
+push 之后、export 之前，调用服务端 preflight 校验预算：
+
+```bash
+# 服务端自动计算行数 + 字段截断检查
+curl -s "http://localhost:3000/api/resume/<id>/export?preflight=true" \
+  -H "x-fingerprint: <fp>" | jq '{ok, contentLinesEstimated, contentLinesAvailable, warnings}'
+```
+
+- `ok: false` → 有 overflow 或 truncation 警告，必须先解决再导出
+- PDF 导出时服务端也会自动运行预算检查，通过 `X-Budget-Warnings` 响应头返回
+- CLI `jadeai resume export --format pdf` 会自动显示预算警告
 
 如果内容裁剪后仍然超出，按顺序调整排版参数。**每个杠杆都是 CLI 命令**——完整参数参考 [ref/layout/theme-cli.md](ref/layout/theme-cli.md)：
 
@@ -314,6 +344,7 @@ Pull 导出每个 section 为 `<type>.json`，同时导出 `theme.json`。Push �
 | JD 解析方法论 | [ref/strategy/jd-parsing.md](ref/strategy/jd-parsing.md) |
 | 策略：角度/预算/冲突/写法 | [ref/strategy/strategy.md](ref/strategy/strategy.md) |
 | 模板行数预算公式 | [ref/layout/layout.md](ref/layout/layout.md) |
+| 字段级字符上限（CSS截断） | [ref/layout/field-limits.md](ref/layout/field-limits.md) |
 | 字符预算表 | [ref/layout/char-budget.md](ref/layout/char-budget.md) |
 | 每模板 section 分配表 | [ref/layout/content-budget.md](ref/layout/content-budget.md) |
 | **ThemeConfig CLI 排版接口** | [ref/layout/theme-cli.md](ref/layout/theme-cli.md) |

@@ -118,10 +118,28 @@ export async function resumeExport(client: JadeClient, out: Output, args: Parsed
   if (args.flags['fit-one-page']) params.set('fitOnePage', 'true');
   if (args.flags['for-print']) params.set('forPrint', 'true');
 
-  const { data: buf, filename } = await client.fetchBlob(`/api/resume/${id}/export?${params}`);
+  const { data: buf, filename, headers } = await client.fetchBlob(`/api/resume/${id}/export?${params}`);
   const outFile = (args.flags.out as string | undefined) || filename;
   writeOutput(buf, outFile);
   out.result({ file: outFile, format, size: buf.length });
+
+  // Show budget warnings from preflight (attached as response headers by server)
+  const budgetWarnings = headers.get('X-Budget-Warnings');
+  const budgetResult: Record<string, unknown> = { file: outFile, format, size: buf.length };
+  if (budgetWarnings) {
+    const warnings = JSON.parse(budgetWarnings) as string[];
+    const budgetOk = headers.get('X-Budget-Ok') === 'true';
+    const budgetLines = headers.get('X-Budget-Lines') || '';
+    budgetResult.budget = { ok: budgetOk, lines: budgetLines, warnings };
+    out.progress(`Budget: ${budgetLines} lines (estimated/available)`);
+    for (const w of warnings) {
+      out.warn(w);
+    }
+    if (!budgetOk) {
+      out.failure('Budget overflow detected — content may exceed one page. Trim content before exporting.');
+    }
+  }
+  out.result(budgetResult);
   out.success(`Exported to ${outFile}`);
 }
 
