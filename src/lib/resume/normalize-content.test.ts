@@ -19,6 +19,10 @@ describe('toStringArray', () => {
     expect(toStringArray(undefined)).toEqual([]);
     expect(toStringArray('   ')).toEqual([]);
   });
+  it('unwraps {name: "..."} objects into plain strings (AI model quirk)', () => {
+    expect(toStringArray([{ name: 'LLM' }, { name: 'Python' }])).toEqual(['LLM', 'Python']);
+    expect(toStringArray(['Go', { name: 'Rust' }, 'C'])).toEqual(['Go', 'Rust', 'C']);
+  });
 });
 
 describe('normalizeSectionContent — heals renderer-crashing shapes (issue #87)', () => {

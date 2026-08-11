@@ -4,12 +4,21 @@ import { resumes, resumeSections } from '../schema';
 
 const INHERITED_PREFIX = 'inherited:';
 
+function normalizeThemeConfig(tc: unknown): Record<string, unknown> {
+  if (tc == null) return {};
+  if (typeof tc === 'string') {
+    try { const parsed = JSON.parse(tc); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed; } catch { /* not JSON */ }
+  }
+  if (typeof tc === 'object' && !Array.isArray(tc)) return tc as Record<string, unknown>;
+  return {};
+}
+
 async function loadWithMerge(resume: any) {
   const sections = await db.select().from(resumeSections)
     .where(eq(resumeSections.resumeId, resume.id))
     .orderBy(resumeSections.sortOrder);
 
-  return { ...resume, sections };
+  return { ...resume, themeConfig: normalizeThemeConfig(resume.themeConfig), sections };
 }
 
 export const resumeRepository = {

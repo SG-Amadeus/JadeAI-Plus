@@ -77,8 +77,13 @@ export async function PUT(
           { status: 422 },
         );
       }
-      // Deep-merge partial into existing config so CLI --theme doesn't wipe other fields
-      const existing = (resume as any).themeConfig || {};
+      // Deep-merge partial into existing config so CLI --theme doesn't wipe other fields.
+      // Normalize string themeConfig (corrupted by Drizzle double-encoding) back to object.
+      let existing = (resume as any).themeConfig || {};
+      if (typeof existing === 'string') {
+        try { existing = JSON.parse(existing); } catch { existing = {}; }
+      }
+      if (typeof existing !== 'object' || Array.isArray(existing)) existing = {};
       updateFields.themeConfig = {
         ...existing,
         ...themeConfig,

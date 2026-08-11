@@ -5,6 +5,7 @@ import { experienceRepository } from '@/lib/db/repositories/experience.repositor
 import { resolveUser, getUserIdFromRequest } from '@/lib/auth/helpers';
 import { DEFAULT_SECTIONS } from '@/lib/constants';
 import { DEFAULT_THEME } from '@/app/api/resume/[id]/export/utils';
+import { validateThemeConfig } from '@/lib/resume/validate';
 import { buildEducationContent, buildPersonalInfoContent } from '@/lib/profile/prefill';
 import { resumes } from '@/lib/db/schema';
 import { db } from '@/lib/db';
@@ -55,12 +56,27 @@ export async function POST(request: NextRequest) {
       resolvedProfileData = profile.data as Record<string, unknown>;
     }
 
+    // Normalize themeConfig: reject malformed, parse strings, default to DEFAULT_THEME
+    let resolvedThemeConfig: unknown = DEFAULT_THEME;
+    if (themeConfig) {
+      // If the client sent a JSON string (e.g. import-json-dialog), parse it first
+      const tc = typeof themeConfig === 'string' ? (() => { try { return JSON.parse(themeConfig); } catch { return themeConfig; } })() : themeConfig;
+      const validation = validateThemeConfig(tc);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: `themeConfig: ${validation.errors.join('; ')}` },
+          { status: 422 },
+        );
+      }
+      resolvedThemeConfig = tc;
+    }
+
     const resume = await resumeRepository.create({
       userId: user.id,
       title: title || '未命名简历',
       template: template || 'minimal-blue',
       language: language || 'zh',
-      themeConfig: themeConfig || DEFAULT_THEME,
+      themeConfig: resolvedThemeConfig,
     });
 
     // Bind profile to resume (denormalized columns)

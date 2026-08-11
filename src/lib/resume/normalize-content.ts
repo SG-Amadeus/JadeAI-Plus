@@ -45,7 +45,13 @@ function asObject(v: unknown): Record<string, unknown> | null {
  *  multiple entries rather than one giant line. */
 export function toStringArray(v: unknown): string[] {
   if (Array.isArray(v)) {
-    return v.filter((x) => x != null && x !== '').map((x) => (typeof x === 'string' ? x : String(x)));
+    return v.filter((x) => x != null && x !== '').map((x) => {
+      if (typeof x === 'string') return x;
+      // AI models sometimes emit skills as {name: "LLM"} objects instead of plain strings.
+      // Unwrap the .name property so we don't end up with "[object Object]" in the UI.
+      if (typeof x === 'object' && x !== null && 'name' in x) return String((x as Record<string, unknown>).name);
+      return String(x);
+    });
   }
   if (v == null) return [];
   if (typeof v === 'string') {
