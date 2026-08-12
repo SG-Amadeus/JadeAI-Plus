@@ -387,7 +387,15 @@ export async function generatePdf(html: string, options: PdfOptions = {}): Promi
     // Set viewport to A4 width before loading content for accurate layout
     await page.setViewport({ width: A4_WIDTH_PX, height: A4_HEIGHT_PX });
 
-    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    // Use base64 data URL instead of setContent to avoid ByteString encoding errors
+    // with Unicode characters > 255 (e.g. ｜ U+FF5C, … U+2026, CJK ideographs).
+    // setContent can fail with "Cannot convert argument to a ByteString" on some
+    // Chromium builds when the HTML contains non-Latin1 characters.
+    const htmlBase64 = Buffer.from(html, 'utf-8').toString('base64');
+    await page.goto(`data:text/html;charset=utf-8;base64,${htmlBase64}`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 15000,
+    });
 
     // Wait for web fonts (e.g. Noto Sans SC) to finish loading
     await page.evaluate(() => document.fonts.ready);
