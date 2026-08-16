@@ -161,6 +161,14 @@ function buildShrinkCSS(state: ShrinkState, childPaddingBase = 0, skipBreakRules
       ${sel} h1 { font-size: calc(var(--base-h1-size) * ${factor}) !important; }
       ${sel} h2 { font-size: calc(var(--base-h2-size) * ${factor}) !important; }
       ${sel} h3 { font-size: calc(var(--base-h3-size) * ${factor}) !important; }
+      /* Scale photos with the text.  zoom (not transform) so the layout box
+         shrinks too — otherwise the fixed-px header photo keeps its size and
+         overhangs the shrunken sections below it.  zoom is multiplicative, so
+         when a wrapper contains only the photo, zoom the wrapper instead and
+         neutralise the img to avoid scaling it twice. */
+      ${sel} img { zoom: ${factor} !important; }
+      ${sel} div:has(> img:only-child) { zoom: ${factor} !important; }
+      ${sel} div:has(> img:only-child) > img { zoom: 1 !important; }
     `);
   }
 

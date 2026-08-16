@@ -69,20 +69,25 @@ export function StandardBlueTemplate({ resume }: { resume: Resume }) {
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="absolute right-0 top-0 flex items-center justify-center">
-            {pi.avatar ? (
-              <AvatarImage
-                src={pi.avatar}
-                avatarStyle={resume.themeConfig?.avatarStyle}
-                size={64}
-              />
-            ) : (
-              <span className="text-[12pt] font-bold" style={{ color: BLUE }}>
-                {zh ? '照片' : 'Photo'}
-              </span>
-            )}
-          </div>
+        <div className="absolute bottom-0 right-0 top-0 flex items-stretch justify-end">
+          {pi.avatar ? (
+            <AvatarImage
+              src={pi.avatar}
+              avatarStyle={resume.themeConfig?.avatarStyle}
+              size={64}
+              style={{
+                height: '100%',
+                width: 'auto',
+                aspectRatio: (resume.themeConfig?.avatarStyle ?? 'oneInch') === 'circle' ? '1 / 1' : '5 / 7',
+              }}
+            />
+          ) : (
+            <span className="flex items-center text-[12pt] font-bold" style={{ color: BLUE }}>
+              {zh ? '照片' : 'Photo'}
+            </span>
+          )}
         </div>
       </header>
 
