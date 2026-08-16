@@ -6,6 +6,7 @@ import { resumeRepository } from '@/lib/db/repositories/resume.repository';
 import { normalizeSectionContent } from '@/lib/resume/normalize-content';
 import { getResumeForAI } from '@/lib/ai/get-resume';
 import { extractJson } from '@/lib/ai/extract-json';
+import { stripPersonalInfoForAI } from '@/lib/resume/sanitize';
 import { z } from 'zod/v4';
 
 const optimizeSchema = z.object({
@@ -38,6 +39,20 @@ export async function POST(request: NextRequest) {
     const targetSections = (sectionIds
       ? resume.sections.filter((s: any) => sectionIds.includes(s.id))
       : resume.sections).filter((s: any) => !s.inherited);
+
+    // Strip PII before sending to AI; save stripped fields to merge back
+    const strippedFields = new Map<string, Record<string, unknown>>();
+    const sanitizedSections = targetSections.map((s: any) => {
+      if (s.type === 'personal_info') {
+        const { content, stripped } = stripPersonalInfoForAI(s.content);
+        if (Object.keys(stripped).length > 0) {
+          strippedFields.set(s.id, stripped);
+        }
+        return { ...s, content };
+      }
+      return s;
+    });
+
     const result = await generateText({
       model,
       maxOutputTokens: 8192,
@@ -50,7 +65,7 @@ Rules:
 - Add quantifiable achievements where JD implies them
 - Do NOT fabricate experience — adapt and emphasize existing content
 - CRITICAL: Return a single valid JSON object with keys: "updatedSections" (array of {sectionId, title, content}) and "summary" (string explaining what was changed). No markdown, no code fences.`,
-      prompt: `## Job Description\n${jobDescription}\n\n## Resume Sections to Optimize\n${JSON.stringify(targetSections)}\n\nOptimize these sections. Return JSON with "updatedSections" and "summary".`,
+      prompt: `## Job Description\n${jobDescription}\n\n## Resume Sections to Optimize\n${JSON.stringify(sanitizedSections)}\n\nOptimize these sections. Return JSON with "updatedSections" and "summary".`,
       providerOptions: getJsonProviderOptions(aiConfig),
     });
 
@@ -61,7 +76,12 @@ Rules:
     for (const updated of parsed.updatedSections) {
       const sectionType = typeById.get(updated.sectionId) as string | undefined;
       if (!sectionType) continue;
-      const content = normalizeSectionContent(sectionType, updated.content);
+      // Merge back stripped fields (e.g. fullName, email, phone, avatar)
+      const saved = strippedFields.get(updated.sectionId);
+      const content = normalizeSectionContent(
+        sectionType,
+        saved ? { ...(updated.content as any), ...saved } : updated.content,
+      );
       await resumeRepository.updateSection(updated.sectionId, { title: updated.title, content });
     }
 
