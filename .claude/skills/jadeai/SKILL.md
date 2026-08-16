@@ -1,6 +1,6 @@
 ---
 name: jadeai
-description: Drive the full resume lifecycle via jadeai CLI. Use when the user asks to create, edit, export, or manage resumes programmatically — including template browsing, section/item CRUD, root/derivative branching, PDF export, profile codename listing, and experience library CRUD.
+description: Drive the full resume lifecycle via jadeai CLI. Use when the user asks to create, edit, export, or manage resumes programmatically — including template browsing, section/item CRUD, root/derivative branching, PDF export, profile codename listing, experience library CRUD, and resume content polishing (岗位定位、亮点改写、表达审计).
 ---
 
 # jadeai — Resume Lifecycle CLI
@@ -136,7 +136,7 @@ curl -s "http://localhost:3000/api/resume/<id>/export?preflight=true" \
 | 顺序 | 参数 | 操作 | 释放行数 | 下限 |
 |---|---|---|---|---|
 | 1 | sectionSpacing ↓ | 编辑 `theme.json`: `"sectionSpacing": 12` → `push` | +1-3 | 4px |
-| 2 | lineSpacing ↓ | 编辑 `theme.json`: `"lineSpacing": 1.35` → `push` | +3-4 | 1.15 |
+| 2 | lineSpacing ↓ | 编辑 `theme.json`: `"lineSpacing": 1.35` → `push` | +3-4 | 1.0 |
 | 3 | margin ↓ | 编辑 `theme.json`: `"margin": {"top": 16, "bottom": 16}` → `push` | +1-2 | 8px |
 | 4 | fontSize small | 编辑 `theme.json`: `"fontSize": "small"` → `push` | +10-12 | — |
 | 5 | template switch | `jadeai resume update <id> --template ats` | 不定 | — |
@@ -269,6 +269,16 @@ pdfinfo ./resume.pdf | grep Pages  # 必须 Pages: 1
 
 **Manual path:** `jadeai resume derive <root-id> --title "JD: Company X"` → pull → edit → budget gate → push → export
 
+### "I want to polish resume content (润色项目/经历描述)"
+→ 走 [ref/writing/polish.md](ref/writing/polish.md)：
+1. 确认目标岗位、JD、求职渠道、突出方向
+2. 读现有简历/项目/公开仓库，材料不足先出初稿 + 最多 5 个待补项
+3. 输出 1-3 个岗位定位（稳妥版/进取版，进取版须说明缺什么证据）
+4. 按「动作 → 系统能力 → 业务价值 → 结果证据 → 个人边界」改写要点
+5. 生成摘要、HR 开场白（短版 + 完整简洁版）、自我介绍
+6. 用「原始说法—建议写法—事实证据—个人边界—风险/待确认」审计强主张
+→ 改写写入 section JSON 后必须过 **BUDGET GATE**（AI 生成可能过长）
+
 ### "I want to fit a resume to one page / budget content"
 → [ref/layout/layout.md](ref/layout/layout.md) 模板行数预算 + [ref/layout/content-budget.md](ref/layout/content-budget.md) 分配表 + [ref/strategy/strategy.md](ref/strategy/strategy.md) JD 感知取舍。先裁剪内容，最后才用 typography levers 和 `--fit-one-page`。
 
@@ -352,6 +362,7 @@ Pull 导出每个 section 为 `<type>.json`，同时导出 `theme.json`。Push �
 | Section 类型/数据形状 | [ref/execution/execution.md](ref/execution/execution.md) |
 | 项目经历写作规范 | [ref/writing/project.md](ref/writing/project.md) |
 | 实习/工作经历写作规范 | [ref/writing/internship.md](ref/writing/internship.md) |
+| 润色方法论（定位/证据/边界/审计） | [ref/writing/polish.md](ref/writing/polish.md) |
 
 ## Error Codes
 
