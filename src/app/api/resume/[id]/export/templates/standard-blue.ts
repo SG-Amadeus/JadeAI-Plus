@@ -35,7 +35,7 @@ function buildDateRange(item: any, lang: string): string {
 
 function buildHL(items?: string[], className = 'text-[9pt] leading-[1.25] text-[#20242c]'): string {
   if (!items?.length) return '';
-  return `<ul class="mt-0 space-y-0">${items.map((h) =>
+  return `<ul class="mt-0 space-y-0.5">${items.map((h) =>
     `<li class="grid grid-cols-[6px_1fr] ${className}"><span class="text-[8pt] font-bold" style="color:#1F4E79">•</span><div class="min-w-0 [&_p]:my-0 [&_ul]:my-0 [&_ol]:my-0 [&_li]:my-0">${md(h)}</div></li>`
   ).join('')}</ul>`;
 }
@@ -81,7 +81,7 @@ function buildStandardBlueSectionContent(section: Section, lang: string = 'en'):
   }
 
   if (section.type === 'skills') {
-    return `<div class="space-y-0">${((c as SkillsContent).categories || []).map((cat: any) =>
+    return `<div class="space-y-0.5">${((c as SkillsContent).categories || []).map((cat: any) =>
       `<p class="text-[9pt] leading-[1.25] text-[#20242c]">${cat.name ? `<span class="font-semibold" style="color:#1F4E79">${esc(cat.name)}：</span>` : ''}${esc((cat.skills || []).join(' / '))}</p>`
     ).join('')}</div>`;
   }

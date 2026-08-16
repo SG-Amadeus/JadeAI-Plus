@@ -127,9 +127,9 @@ function EntryHeader({
 }) {
   return (
     <div className="flex min-w-0 items-center text-[12pt] font-bold leading-5" style={{ color: BLUE }}>
-      {left && <span className="max-w-[42%] shrink-0 truncate">{left}</span>}
+      {left && <span className="shrink-0">{left}</span>}
       {left && middle && <span className={SEP} />}
-      {middle && <span className="max-w-[36%] shrink-0 truncate">{middle}</span>}
+      {middle && <span className="shrink-0">{middle}</span>}
       {(left || middle) && right && <span className={SEP} />}
       {right && <span className="shrink-0 whitespace-nowrap text-[11pt]">{right}</span>}
     </div>
@@ -163,7 +163,7 @@ function HighlightList({ items }: { items?: string[] }) {
   if (!items?.length) return null;
 
   return (
-    <ul className="mt-0.5 space-y-0">
+    <ul className="mt-0.5 space-y-1">
       {items.map((highlight, index) => (
         <li key={index} className="grid grid-cols-[9px_1fr] text-[11pt] leading-[1.45] text-[#20242c]">
           <span className="font-bold" style={{ color: BLUE }}>
@@ -195,17 +195,17 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
         {(content.items || []).map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
             <div className="flex min-w-0 items-center text-[12pt] font-bold leading-5" style={{ color: BLUE }}>
-              <span className="max-w-[42%] shrink-0 truncate">{item.company || item.position}</span>
+              <span className="shrink-0">{item.company || item.position}</span>
               {item.company && item.department && (
                 <>
                   <span className={SEP} />
-                  <span className="max-w-[36%] shrink-0 truncate">{item.department}</span>
+                  <span className="shrink-0">{item.department}</span>
                 </>
               )}
               {item.company && item.position && (
                 <>
                   <span className={SEP} />
-                  <span className="max-w-[36%] shrink-0 truncate">{item.position}</span>
+                  <span className="shrink-0">{item.position}</span>
                 </>
               )}
               <span className={SEP} />
@@ -296,11 +296,11 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
         {items.map((item: any) => (
             <article key={item.id} className="break-inside-avoid">
               <div className="flex min-w-0 items-center text-[12pt] font-bold leading-5" style={{ color: BLUE }}>
-                <span className="max-w-[35%] shrink-0 truncate">{item.name}</span>
+                <span className="shrink-0">{item.name}</span>
                 {item.url && (
                   <>
                     <span className="mx-1.5 h-px w-3 shrink-0 bg-[#1F4E79]" />
-                    <span className="max-w-[45%] shrink-0 truncate text-[10pt] font-normal">{item.url}</span>
+                    <span className="shrink-0 text-[10pt] font-normal">{item.url}</span>
                   </>
                 )}
                 <span className={SEP} />

@@ -35,7 +35,7 @@ function buildDateRange(item: any, lang: string): string {
 
 function buildHL(items?: string[], className = 'text-[11pt] leading-[1.45] text-[#20242c]'): string {
   if (!items?.length) return '';
-  return `<ul class="mt-0.5 space-y-0">${items.map((h) =>
+  return `<ul class="mt-0.5 space-y-1">${items.map((h) =>
     `<li class="grid grid-cols-[9px_1fr] ${className}"><span class="font-bold" style="color:#1F4E79">•</span><div class="min-w-0 [&_p]:my-0 [&_ul]:my-0 [&_ol]:my-0 [&_li]:my-0">${md(h)}</div></li>`
   ).join('')}</ul>`;
 }
