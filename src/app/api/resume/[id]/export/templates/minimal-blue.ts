@@ -9,7 +9,7 @@ import type {
   CustomContent,
   GitHubContent,
 } from '@/types/resume';
-import { esc, md, degreeField, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
+import { esc, md, getPersonalInfo, visibleSections, buildHighlights, buildQrCodesHtml, type ResumeWithSections, type Section } from '../utils';
 
 const BLUE = '#1F4E79';
 const SEP = 'mx-2 h-px min-w-4 flex-1 bg-[#1F4E79]';
@@ -21,6 +21,19 @@ function buildEntryHeader(left?: string, middle?: string, right?: string): strin
   if (middle) parts.push(`<span class="max-w-[36%] shrink-0 truncate">${esc(middle)}</span>`);
   if ((left || middle) && right) parts.push(`<span class="${SEP}"></span>`);
   if (right) parts.push(`<span class="shrink-0 whitespace-nowrap text-[11pt]">${esc(right)}</span>`);
+  return `<div class="flex min-w-0 items-center text-[12pt] font-bold leading-5" style="color:#1F4E79">${parts.join('')}</div>`;
+}
+
+function buildEducationHeader(institution?: string, degree?: string, field?: string, date?: string): string {
+  const dash = 'mx-2 h-px w-4 shrink-0 bg-[#1F4E79]';
+  const parts: string[] = [];
+  if (institution) parts.push(`<span class="shrink-0">${esc(institution)}</span>`);
+  if (institution && degree) parts.push(`<span class="${dash}"></span>`);
+  if (degree) parts.push(`<span class="shrink-0">${esc(degree)}</span>`);
+  if (degree && field) parts.push(`<span class="${dash}"></span>`);
+  parts.push(`<span class="flex min-w-0 flex-1 items-center">${field ? `<span class="shrink-0">${esc(field)}</span>` : ''}<span class="mx-2 h-px flex-1 bg-[#1F4E79]"></span></span>`);
+  parts.push(`<span class="${dash}"></span>`);
+  if (date) parts.push(`<span class="shrink-0 whitespace-nowrap text-[11pt]">${esc(date)}</span>`);
   return `<div class="flex min-w-0 items-center text-[12pt] font-bold leading-5" style="color:#1F4E79">${parts.join('')}</div>`;
 }
 
@@ -74,7 +87,7 @@ function buildMinimalBlueSectionContent(section: Section, lang: string = 'en'): 
 
   if (section.type === 'education') {
     return `<div class="space-y-2.5">${((c as EducationContent).items || []).map((it: any) => `<article class="break-inside-avoid">
-      ${buildEntryHeader(it.institution, degreeField(it.degree, it.field), buildDateRange(it, lang))}
+      ${buildEducationHeader(it.institution, it.degree, it.field, buildDateRange(it, lang))}
       ${(it.gpa || it.description) ? `<p class="mt-0.5 text-[10pt] leading-[1.45] text-[#20242c]">${it.gpa ? `<span class="font-semibold" style="color:#1F4E79">GPA：</span>${esc(it.gpa)}` : ''}${it.gpa && it.description ? '<span class="mx-2 text-[#9ca3af]">|</span>' : ''}${it.description ? `<span>${md(it.description)}</span>` : ''}</p>` : ''}
       ${buildHL(it.highlights)}
     </article>`).join('')}</div>`;

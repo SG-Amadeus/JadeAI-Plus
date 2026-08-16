@@ -136,6 +136,33 @@ function EntryHeader({
   );
 }
 
+function EducationHeader({
+  institution,
+  degree,
+  field,
+  date,
+}: {
+  institution?: string;
+  degree?: string;
+  field?: string;
+  date?: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center text-[12pt] font-bold leading-5" style={{ color: BLUE }}>
+      {institution && <span className="shrink-0">{institution}</span>}
+      {institution && degree && <span className="mx-2 h-px w-4 shrink-0 bg-[#1F4E79]" />}
+      {degree && <span className="shrink-0">{degree}</span>}
+      {degree && field && <span className="mx-2 h-px w-4 shrink-0 bg-[#1F4E79]" />}
+      <span className="flex min-w-0 flex-1 items-center">
+        {field && <span className="shrink-0">{field}</span>}
+        <span className="mx-2 h-px flex-1 bg-[#1F4E79]" />
+      </span>
+      <span className="mx-2 h-px w-4 shrink-0 bg-[#1F4E79]" />
+      {date && <span className="shrink-0 whitespace-nowrap text-[11pt]">{date}</span>}
+    </div>
+  );
+}
+
 function DateRange({ item, lang }: { item: any; lang?: string }) {
   if (!item.startDate && !item.endDate && !item.current) return null;
 
@@ -246,10 +273,11 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
       <div className="space-y-2.5">
         {(content.items || []).map((item: any) => (
           <article key={item.id} className="break-inside-avoid">
-            <EntryHeader
-              left={item.institution}
-              middle={item.degree && item.field ? `${item.degree} - ${item.field}` : (item.degree || item.field || '')}
-              right={<DateRange item={item} lang={lang} />}
+            <EducationHeader
+              institution={item.institution}
+              degree={item.degree}
+              field={item.field}
+              date={<DateRange item={item} lang={lang} />}
             />
             {(item.gpa || item.description) && (
               <p className="mt-0.5 text-[10pt] leading-[1.45] text-[#20242c]">
