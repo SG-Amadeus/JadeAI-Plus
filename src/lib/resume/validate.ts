@@ -169,8 +169,8 @@ export function validateThemeConfig(config: unknown): ValidationResult {
   if (config.lineSpacing !== undefined) {
     if (!isNumber(config.lineSpacing)) {
       errors.push(`lineSpacing must be a number, got ${JSON.stringify(config.lineSpacing)}`);
-    } else if (config.lineSpacing < 0.8 || config.lineSpacing > 3.0) {
-      errors.push(`lineSpacing must be between 0.8 and 3.0, got ${config.lineSpacing}`);
+    } else if (config.lineSpacing < 1.0 || config.lineSpacing > 3.0) {
+      errors.push(`lineSpacing must be between 1.0 and 3.0, got ${config.lineSpacing}`);
     }
   }
   if (config.sectionSpacing !== undefined) {

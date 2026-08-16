@@ -121,26 +121,40 @@ export async function resumeExport(client: JadeClient, out: Output, args: Parsed
   const { data: buf, filename, headers } = await client.fetchBlob(`/api/resume/${id}/export?${params}`);
   const outFile = (args.flags.out as string | undefined) || filename;
   writeOutput(buf, outFile);
-  out.result({ file: outFile, format, size: buf.length });
 
-  // Show budget warnings from preflight (attached as response headers by server)
+  // Budget callback from export headers
+  const budgetOk = headers.get('X-Budget-Ok');
+  const budgetFill = headers.get('X-Budget-Fill');
+  const budgetLines = headers.get('X-Budget-Lines');
   const budgetWarnings = headers.get('X-Budget-Warnings');
-  const budgetResult: Record<string, unknown> = { file: outFile, format, size: buf.length };
+  const budgetInfo: Record<string, unknown> = { file: outFile, format, size: buf.length };
+  if (budgetOk !== null) {
+    budgetInfo.budget = {
+      ok: budgetOk === 'true',
+      fill: budgetFill || '?',
+      lines: budgetLines || '?',
+      warnings: budgetWarnings ? budgetWarnings.split(',').filter(Boolean) : [],
+    };
+  }
+  out.result(budgetInfo);
+
+  // Budget hints for the user / AI
   if (budgetWarnings) {
-    const warnings = JSON.parse(budgetWarnings) as string[];
-    const budgetOk = headers.get('X-Budget-Ok') === 'true';
-    const budgetLines = headers.get('X-Budget-Lines') || '';
-    budgetResult.budget = { ok: budgetOk, lines: budgetLines, warnings };
-    out.progress(`Budget: ${budgetLines} lines (estimated/available)`);
-    for (const w of warnings) {
-      out.warn(w);
+    const severities = budgetWarnings.split(',').filter(Boolean);
+    if (severities.includes('overflow')) {
+      out.warn(`BUDGET OVERFLOW: content exceeds page capacity (${budgetLines}, ${budgetFill} fill). Trim content or reduce font size.`);
     }
-    if (!budgetOk) {
-      out.failure('Budget overflow detected — content may exceed one page. Trim content before exporting.');
+    if (severities.includes('sparse')) {
+      out.warn(`BUDGET SPARSE: content under-fills the page (${budgetLines}, ${budgetFill} fill). Resume must be full — expand content or switch template.`);
+    }
+    if (severities.includes('tight') && !severities.includes('overflow') && !severities.includes('sparse')) {
+      out.warn(`BUDGET TIGHT: ${budgetLines} lines, ${budgetFill} fill — verify with export.`);
     }
   }
-  out.result(budgetResult);
-  out.success(`Exported to ${outFile}`);
+
+  if (budgetOk === 'true') {
+    out.success(`Exported to ${outFile}`);
+  }
 }
 
 // ── update ──

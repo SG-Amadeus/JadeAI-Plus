@@ -227,7 +227,7 @@ async function fitContentToOnePage(page: Page): Promise<void> {
 
   // Stage limits
   const maxSectionDelta = Math.max(0, baseValues.sectionSpacing - 4);
-  const maxLineDelta = Math.max(0, baseValues.lineSpacing - 1.15);
+  const maxLineDelta = Math.max(0, baseValues.lineSpacing - 1.0);
   // For regular templates: reduce outer div padding; for BACKGROUND: reduce child padding
   const maxMarginDelta = baseValues.needsPadding
     ? Math.max(0, baseValues.marginTop - 8)
@@ -319,7 +319,7 @@ async function preventNearlyBlankPage(page: Page): Promise<void> {
 
   // Stage limits — light font scaling (cap at 95%, vs 80% for fitOnePage)
   const maxSectionDelta = Math.max(0, baseValues.sectionSpacing - 4);
-  const maxLineDelta = Math.max(0, baseValues.lineSpacing - 1.15);
+  const maxLineDelta = Math.max(0, baseValues.lineSpacing - 1.0);
   const maxMarginDelta = baseValues.needsPadding
     ? Math.max(0, baseValues.marginTop - 8)
     : Math.max(0, Math.round(baseValues.childPaddingTop - 16));

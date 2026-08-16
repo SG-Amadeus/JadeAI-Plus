@@ -19,15 +19,11 @@ const DEFAULT_THEME = {
 // ── Types ──
 
 export interface BudgetWarning {
-  severity: 'overflow' | 'truncation' | 'tight';
+  severity: 'overflow' | 'tight' | 'sparse';
   section: string;
-  field?: string;
   message: string;
   /** Estimated lines over capacity (overflow only) */
   excess?: number;
-  /** Character count vs limit (truncation only) */
-  chars?: number;
-  limit?: number;
 }
 
 export interface BudgetPreflightResult {
@@ -60,66 +56,25 @@ interface TemplateProfile {
   headerPx: number;
   /** Per contact-grid row height in px (for personal_info grid) */
   contactRowPx: number;
-  /** Templates with CSS truncation on inline fields */
-  hasTruncation: boolean;
-  /** Content width reduction factor for truncation (padding as fraction of A4) */
-  contentPadX: number;
-  /** Max-width percentages for truncated fields */
-  truncation: {
-    companyPos: number;   // max-w-% for company/position
-    department: number;   // max-w-% for department
-    projectName: number;  // max-w-% for project name
-    url: number;          // max-w-% for URL
-  };
 }
 
 const A4_WIDTH = 794;
 const A4_HEIGHT = 1123;
 
 const TEMPLATE_PROFILES: Record<string, TemplateProfile> = {
-  minimal: {
-    regime: 'regular', h2ExtraPx: 8, headerPx: 85, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
-  },
-  ats: {
-    regime: 'regular', h2ExtraPx: 9, headerPx: 104, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
-  },
-  classic: {
-    regime: 'regular', h2ExtraPx: 13, headerPx: 135, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
-  },
-  professional: {
-    regime: 'regular', h2ExtraPx: 12, headerPx: 139, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
-  },
-  'minimal-blue': {
-    regime: 'regular', h2ExtraPx: 18, headerPx: 158, contactRowPx: 21,
-    hasTruncation: true, contentPadX: 57, // px-[15mm] ≈ 57px per side
-    truncation: { companyPos: 42, department: 36, projectName: 35, url: 45 },
-  },
-  'standard-blue': {
-    regime: 'regular', h2ExtraPx: 7, headerPx: 146, contactRowPx: 21,
-    hasTruncation: true, contentPadX: 38, // px-[10mm] ≈ 38px per side
-    truncation: { companyPos: 40, department: 34, projectName: 35, url: 45 },
-  },
-  modern: {
-    regime: 'background', h2ExtraPx: 12, headerPx: 183, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
-  },
+  minimal:       { regime: 'regular', h2ExtraPx: 8,  headerPx: 85,  contactRowPx: 21 },
+  ats:           { regime: 'regular', h2ExtraPx: 9,  headerPx: 104, contactRowPx: 21 },
+  classic:       { regime: 'regular', h2ExtraPx: 13, headerPx: 135, contactRowPx: 21 },
+  professional:  { regime: 'regular', h2ExtraPx: 12, headerPx: 139, contactRowPx: 21 },
+  'minimal-blue':  { regime: 'regular', h2ExtraPx: 18, headerPx: 158, contactRowPx: 21 },
+  'standard-blue': { regime: 'regular', h2ExtraPx: 7,  headerPx: 146, contactRowPx: 21 },
+  modern:        { regime: 'background', h2ExtraPx: 12, headerPx: 183, contactRowPx: 21 },
 };
 
 function getProfile(template: string): TemplateProfile {
   return TEMPLATE_PROFILES[template] ?? {
     regime: BACKGROUND_TEMPLATES.has(template) ? 'background' : 'regular',
     h2ExtraPx: 12, headerPx: 120, contactRowPx: 21,
-    hasTruncation: false, contentPadX: 0,
-    truncation: { companyPos: 100, department: 100, projectName: 100, url: 100 },
   };
 }
 
@@ -225,121 +180,6 @@ function estimateSectionLines(section: any, charsPerLine: number, lang: string):
   }
 }
 
-// ── Per-Field Truncation Check ──
-
-function checkFieldTruncation(
-  template: string,
-  theme: typeof DEFAULT_THEME,
-  sections: any[],
-  lang: string,
-): BudgetWarning[] {
-  const profile = getProfile(template);
-  if (!profile.hasTruncation) return [];
-
-  const scale = FONT_SCALE[theme.fontSize] || FONT_SCALE.medium;
-  const m = theme.margin;
-  // Content area width after template padding
-  const contentW = A4_WIDTH - m.left - m.right - profile.contentPadX * 2;
-  const glyphWidth = lang === 'zh' ? scale.body * 1.0 : scale.body * 0.55;
-
-  function charLimit(pct: number): number {
-    return Math.floor((contentW * pct / 100) / glyphWidth);
-  }
-
-  const warnings: BudgetWarning[] = [];
-
-  for (const section of sections) {
-    const c = section.content;
-    if (!c?.items) continue;
-
-    if (section.type === 'work_experience') {
-      for (let i = 0; i < c.items.length; i++) {
-        const item = c.items[i];
-        const prefix = `${section.title}[${i}]`;
-
-        // Company name or position (left slot) — whichever is longer
-        const leftField = item.company || item.position || '';
-        const leftLimit = charLimit(profile.truncation.companyPos);
-        if (leftField.length > leftLimit) {
-          warnings.push({
-            severity: 'truncation',
-            section: section.title,
-            field: `${prefix}.company`,
-            message: `Company/position "${leftField.slice(0, 20)}…" is ${leftField.length} chars, limit ${leftLimit} — will be truncated in ${template}`,
-            chars: leftField.length,
-            limit: leftLimit,
-          });
-        }
-
-        // Department (middle slot)
-        if (item.department) {
-          const deptLimit = charLimit(profile.truncation.department);
-          if (item.department.length > deptLimit) {
-            warnings.push({
-              severity: 'truncation',
-              section: section.title,
-              field: `${prefix}.department`,
-              message: `Department "${item.department.slice(0, 20)}…" is ${item.department.length} chars, limit ${deptLimit} — will be truncated in ${template}`,
-              chars: item.department.length,
-              limit: deptLimit,
-            });
-          }
-        }
-
-        // Position (when separate from company)
-        if (item.company && item.position) {
-          const posLimit = charLimit(profile.truncation.department); // same slot
-          if (item.position.length > posLimit) {
-            warnings.push({
-              severity: 'truncation',
-              section: section.title,
-              field: `${prefix}.position`,
-              message: `Position "${item.position.slice(0, 20)}…" is ${item.position.length} chars, limit ${posLimit} — will be truncated in ${template}`,
-              chars: item.position.length,
-              limit: posLimit,
-            });
-          }
-        }
-      }
-    }
-
-    if (section.type === 'projects') {
-      for (let i = 0; i < c.items.length; i++) {
-        const item = c.items[i];
-        const prefix = `${section.title}[${i}]`;
-
-        const nameLimit = charLimit(profile.truncation.projectName);
-        if (item.name && item.name.length > nameLimit) {
-          warnings.push({
-            severity: 'truncation',
-            section: section.title,
-            field: `${prefix}.name`,
-            message: `Project name "${item.name.slice(0, 20)}…" is ${item.name.length} chars, limit ${nameLimit} — will be truncated in ${template}`,
-            chars: item.name.length,
-            limit: nameLimit,
-          });
-        }
-
-        if (item.url) {
-          const urlLimit = charLimit(profile.truncation.url);
-          if (item.url.length > urlLimit) {
-            warnings.push({
-              severity: 'truncation',
-              section: section.title,
-              field: `${prefix}.url`,
-              message: `URL "${item.url.slice(0, 30)}…" is ${item.url.length} chars, limit ${urlLimit} — will be truncated in ${template}`,
-              chars: item.url.length,
-              limit: urlLimit,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return warnings;
-}
-
 // ── Main Entry Point ──
 
 export function validateResumeBudget(
@@ -388,26 +228,40 @@ export function validateResumeBudget(
   }
 
   const warnings: BudgetWarning[] = [];
+  const utilization = contentLines > 0 ? totalEstimated / contentLines : 0;
+  const emptyLines = Math.max(0, contentLines - totalEstimated);
 
-  // Overflow warning
-  if (totalEstimated > contentLines) {
+  // Overflow (>10% over capacity) — hard block, can't fix with margin/font tweaks alone
+  if (totalEstimated > contentLines * 1.1) {
     warnings.push({
       severity: 'overflow',
       section: '(total)',
-      message: `Estimated ${totalEstimated} content lines exceeds template capacity of ${contentLines} lines (${template}, ${theme.fontSize}, lineSpacing ${theme.lineSpacing})`,
+      message: `Estimated ${totalEstimated} lines exceeds capacity by >10% (${contentLines} lines, ${Math.round(utilization * 100)}% fill, +${totalEstimated - contentLines} over) — trim content before export`,
       excess: totalEstimated - contentLines,
     });
-  } else if (totalEstimated >= contentLines - 1) {
+  } else if (totalEstimated > contentLines) {
+    // Within 10% overflow — fixable via margin/font adjustments
     warnings.push({
       severity: 'tight',
       section: '(total)',
-      message: `Estimated ${totalEstimated} content lines is within 1 line of capacity (${contentLines}) — verify with export`,
+      message: `Estimated ${totalEstimated} lines slightly over capacity (${contentLines} lines, +${totalEstimated - contentLines} over, ${Math.round((utilization - 1) * 100)}%) — try reducing margins or font size`,
     });
   }
 
-  // Per-field truncation warnings
-  const truncationWarnings = checkFieldTruncation(template, theme, visibleSections, lang);
-  warnings.push(...truncationWarnings);
+  // Sparse — content does not fill the page. Resume taboo: must be full.
+  if (utilization < 0.85) {
+    warnings.push({
+      severity: 'sparse',
+      section: '(total)',
+      message: `Content fills only ${Math.round(utilization * 100)}% of the page (${totalEstimated}/${contentLines} lines, ~${emptyLines} empty lines) — resume must be full, expand content or switch to a denser template`,
+    });
+  } else if (utilization < 0.95) {
+    warnings.push({
+      severity: 'tight',
+      section: '(total)',
+      message: `Content at ${Math.round(utilization * 100)}% fill (${totalEstimated}/${contentLines} lines, ~${emptyLines} empty lines) — slight gap at bottom, consider adding a highlight or two`,
+    });
+  }
 
   // Per-section tight warnings
   for (const b of breakdown) {
@@ -421,7 +275,7 @@ export function validateResumeBudget(
   }
 
   return {
-    ok: warnings.filter(w => w.severity === 'overflow').length === 0,
+    ok: warnings.filter(w => w.severity === 'overflow' || w.severity === 'sparse').length === 0,
     template,
     contentLinesAvailable: contentLines,
     contentLinesEstimated: totalEstimated,

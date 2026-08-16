@@ -6,9 +6,22 @@ import { generateHtml } from './builders';
 import { generatePlainText } from './plain-text';
 import { generateDocxBuffer } from './docx';
 import { EXPORT_SECTION_TYPES } from '@/lib/constants';
-import { sanitizePersonalInfoForExport } from './utils';
 import { injectResolvedPersonalInfo } from '@/lib/resume/resolve-personal-info';
-import { validateResumeBudget } from '@/lib/resume/budget-validate';
+import { validateResumeBudget, type BudgetPreflightResult } from '@/lib/resume/budget-validate';
+
+function budgetHeaders(b: BudgetPreflightResult): Record<string, string> {
+  const fill = b.contentLinesAvailable > 0
+    ? `${Math.round((b.contentLinesEstimated / b.contentLinesAvailable) * 100)}%`
+    : '0%';
+  const severities = [...new Set(b.warnings.map(w => w.severity))].join(',');
+  return {
+    'X-Budget-Ok': String(b.ok),
+    'X-Budget-Fill': fill,
+    'X-Budget-Lines': `${b.contentLinesEstimated}/${b.contentLinesAvailable}`,
+    'X-Budget-Warnings': severities,
+    'Access-Control-Expose-Headers': 'X-Budget-Ok, X-Budget-Fill, X-Budget-Lines, X-Budget-Warnings',
+  };
+}
 
 // Chromium download + PDF render needs more time on Vercel serverless
 export const maxDuration = 60;
@@ -38,19 +51,13 @@ export async function GET(
     const resolved = await injectResolvedPersonalInfo(resume as any);
     resume.sections = resolved.sections;
 
-    // Sanitize PII from personal_info before any format touches the data.
-    // This is the single choke point — all export formats (json, txt, html, pdf, docx)
-    // receive a sanitized copy of the resume.
-    resume.sections = resume.sections.map((s: any) => {
-      if (s.type !== 'personal_info') return s;
-      return { ...s, content: sanitizePersonalInfoForExport(s.content || {}) };
-    });
+    // Always run budget validation — returned alongside every export so AI / UI can react
+    const budget = validateResumeBudget(resume as any);
 
     // Preflight mode: validate budget without generating export
     const preflight = request.nextUrl.searchParams.get('preflight') === 'true';
     if (preflight) {
-      const result = validateResumeBudget(resume as any);
-      return NextResponse.json(result);
+      return NextResponse.json(budget);
     }
 
     const format = request.nextUrl.searchParams.get('format') || 'json';
@@ -75,11 +82,10 @@ export async function GET(
           template: resume.template,
           language: (resume as any).language || 'zh',
           sections,
+          budget,
         });
       }
       case 'html': {
-        // forPrint=true returns the print-optimized layout (used by the client-side
-        // "print to PDF" fallback when server Chromium is unavailable, issue #85).
         const forPrint = request.nextUrl.searchParams.get('forPrint') === 'true';
         const html = await generateHtml(resume, forPrint);
         return new NextResponse(html, {
@@ -87,6 +93,7 @@ export async function GET(
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.html"`,
+            ...budgetHeaders(budget),
           },
         });
       }
@@ -97,6 +104,7 @@ export async function GET(
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
             'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.txt"`,
+            ...budgetHeaders(budget),
           },
         });
       }
@@ -107,25 +115,22 @@ export async function GET(
           headers: {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.docx"`,
+            ...budgetHeaders(budget),
           },
         });
       }
       case 'pdf': {
         const fitOnePage = request.nextUrl.searchParams.get('fitOnePage') === 'true';
-        // Run budget preflight and attach warnings as response header
-        const budget = validateResumeBudget(resume as any);
         const pdfHtml = await generateHtml(resume, true);
         const pdfBuffer = await generatePdf(pdfHtml, { fitOnePage });
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.pdf"`,
-        };
-        if (budget.warnings.length > 0) {
-          headers['X-Budget-Warnings'] = JSON.stringify(budget.warnings.map(w => `${w.severity}: ${w.message}`));
-          headers['X-Budget-Ok'] = budget.ok ? 'true' : 'false';
-          headers['X-Budget-Lines'] = `${budget.contentLinesEstimated}/${budget.contentLinesAvailable}`;
-        }
-        return new NextResponse(new Uint8Array(pdfBuffer), { status: 200, headers });
+        return new NextResponse(new Uint8Array(pdfBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}.pdf"`,
+            ...budgetHeaders(budget),
+          },
+        });
       }
       default: {
         return NextResponse.json(
